@@ -1,10 +1,13 @@
 /**
 * AppleOfMyIframe
+*   v0.5
 **
 
-  A jQuery plugin for manipulating programmatically-created iframes
-  by Premasagar Rose http://premasagar.com
-  for Dharmafly http://dharmafly.com
+  A jQuery plugin for manipulating programmatically created iframe DOM elements with injected HTML contents.
+  
+  by Premasagar Rose
+    http://premasagar.com
+    http://dharmafly.com
   
   **
 
@@ -12,19 +15,6 @@
     jQuery.iframe(),  jQuery(elem).intoIframe()
     
   **
-    
-  Performance notes:
-    $.iframe().appendTo('body').body('blah');
-    // body() x2
-
-    var i = $.iframe();
-    $('body').append(i);
-    i.body('blah');
-    // body() x1
-
-    $.iframe('blah').appendTo('body');
-    // body() x3
-    // addToDom() x1
   
   TODO
     Intelligent resizing to body contents, whenever the body needs re-creating, or is modified - done. but only on first creation
