@@ -189,7 +189,7 @@
                             
                             if (nowPrimed){
                                 if ($bodyCache){
-                                    $body.replaceWith($bodyCache);
+                                    $body.replaceWith($bodyCache.clone(true));
                                     $body = $bodyCache;
                                 }
                                 // First time iframe has been created
