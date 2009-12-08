@@ -161,6 +161,7 @@
             document: function(){
               return this[0].contentDocument || (this[0].contentWindow ? this[0].contentWindow.document : false);
             },
+            // TODO: Add a parallel head() method, and perhaps move some of the generic functionality to a different method(?)
             body: function(contents){
               var that, doc, $bodyCache, src, $body, nowPrimed;
               that = this;
@@ -208,6 +209,7 @@
             },
             // Set dimensions of iframe element to that of its inner body.
             // TODO: Are offsetHeight, offsetWidth, scrollHeight or scrollWidth properties of <iframe/> element useful here instead?
+            // TODO: Separate methods for horiz and vert size, e.g. matchXSize() and matchYSize()
             matchSize: function(){
               var $body = this.body();
               return this
@@ -231,6 +233,7 @@
               $.event.add(this, 'iframe.ready', callback); // We use $.event.add instead of this.bind()
             },
             // An invisible element in the DOM for preparing iframes that are not yet in the DOM
+            // TODO: This can now be axed. It has been used for situation when iframe element is not yet in DOM, but iframe body contents has been supplied. In such a situation, however, we can simply cache the body contents and wait until the iframe element is append'edTo some element in the DOM, when the body contents can be retrieved from the cache.
             hideInDom: $.extend(
               function(){
                 var $dom = $('#' + ns);                
