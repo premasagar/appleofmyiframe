@@ -80,7 +80,6 @@
                                     if (this.options.autoresize){ // TODO: Ideally, whenever content is manipulated inside the iframe's body, then it would be good to matchSize() at that point, e.g. by using the DOM mutation event on the body contents...
                                         this.matchSize();
                                     }
-                                    this.hideInDom.remove(); // remove the hidden div if it's empty
                                     return this;
                                 };
                             }
@@ -150,6 +149,9 @@
                             if (callback){
                                 this.ready(callback);
                             }
+                            this.ready(function(){
+                                this.hideInDom.remove();
+                            });
                             
                             // Inject contents, if supplied
                             if (contents && !attr.src){
