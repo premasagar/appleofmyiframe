@@ -211,10 +211,10 @@
                         // TODO: Are offsetHeight, offsetWidth, scrollHeight or scrollWidth properties of <iframe/> element useful here instead?
                         // TODO: Separate methods for horiz and vert size, e.g. matchXSize() and matchYSize()
                         matchSize: function(){
-                            var $body = this.body();
+                            var $bodyChildren = this.body().children();
                             return this
-                                .height($body.height())
-                                .width($body.width()); // Note that width will only be changed if the iframe body contains content of a specified width. Otherwise, it'll remain as the browser's default width for an iframe (e.g. 300px in Firefox)
+                                .height($bodyChildren.height())
+                                .width($bodyChildren.width()); // Note that width will only be changed if the iframe body contains content of a specified width. Otherwise, it'll remain as the browser's default width for an iframe (e.g. 300px in Firefox)
                         },
                         // The callback function has the iframe jQuery object as the 'this' keyword. If is a local iframe, then contents of iframe's body will be the first arg of the argument
                         // Not required when injecting HTML contents
