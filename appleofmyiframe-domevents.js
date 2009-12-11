@@ -53,7 +53,7 @@
             if (isUrl(contents)){
                 attr.src = contents;
 				contents = '';
-            }
+			}
 			
 			//	Absorbe the iframe
 			$.fn.init.call(this, '<iframe></iframe>').attr(attr);
