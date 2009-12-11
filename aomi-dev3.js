@@ -65,7 +65,7 @@
                 _this.body().css({margin:0, padding:0});
                 //	Append contents
                 if (contents) {
-                    _this.body(contents).children().eq(0).css({margin:0, padding:0});
+                    _this.body(contents);
                    if (_this.options.autoresize) _this.matchSize();
                 }
             }
