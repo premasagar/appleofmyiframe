@@ -1,4 +1,3 @@
-//
 //	TODO: onload events
 //	TODO: callback passed in constrctor, 
 (function($){ 
@@ -103,9 +102,9 @@
 			$.fn.appendTo.call(this, obj);
 			if (!this.attr('src') || this.attr('src')=='about:blank') {
 				var _this = this;
-				setTimeout(function(){
+				//setTimeout(function(){
 					_this._swapDocuments();
-				}, 1);
+				//}, 1);
 			}
             // IE6 repaint hack for external src iframes
             else if ($.browser.msie && parseInt($.browser.version, 10) === 6) {
@@ -207,10 +206,10 @@
 				newDocument.adoptNode(old_body);
 				new_body.parentNode.replaceChild(old_body, new_body);
 				
-				//var old_head = oldDocument.getElementsByTagName('head')[0];
-				//var new_head = newDocument.getElementsByTagName('head')[0];
-				//newDocument.adoptNode(old_head);
-				//new_head.parentNode.replaceChild(old_head, new_head);
+				var old_head = oldDocument.getElementsByTagName('head')[0];
+				var new_head = newDocument.getElementsByTagName('head')[0];
+				newDocument.adoptNode(old_head);
+				new_head.parentNode.replaceChild(old_head, new_head);
 			}
 			this.data('body', newDocument.body.cloneNode(true));
 		}
