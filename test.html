@@ -13,26 +13,8 @@
   </div>
   
   <script>
-    // debug
-    function _(){
-      var i, console = window.console, args = arguments;
-      if (console){
-        if (console.debug && typeof console.debug.apply === 'function'){
-          // FF Firebug
-          _ = console.debug; // next time, use debug
-        }
-        if (console.log){
-          if (typeof console.log.apply === 'function'){
-            console.log.apply(console, args);
-          }
-          else { // IE8
-            for (i=0; i < args.length; i++){
-              console.log(args[i]);
-            }
-          }
-        }
-      }
-    }
+    // Console debug logging - http://github.com/premasagar/console
+    var _ = (function(){var d=window,c=d.console,a=d.opera,b;if(!c){return(a&&a.postError)?function(){var g,e,h=a.postError,f=arguments;e=f.length;for(g=0;g<e;g++){h(f[g])}}:function(){}}else{if(/webkit/i.test(d.navigator.userAgent)){return function(){c.log(arguments)}}else{b=c.debug;return b?b:function(){var g,e,h=c.log,f=arguments;if(h){if(typeof h.apply==="function"){h.apply(c,f)}else{e=f.length;for(g=0;g<e;g++){h(f[g])}}}}}}})();
     
 		/*
     // Examples
