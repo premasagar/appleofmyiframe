@@ -47,6 +47,7 @@
 
 			//	Options
 			if (typeof options=='object') $.extend(true, this.options, options);
+			var attr = this.options.attr;
 			
 			// If a url supplied, add it as the iframe src, to load the page
             if (isUrl(contents)){
@@ -55,7 +56,7 @@
             }
 			
 			//	Absorbe the iframe
-			$.fn.init.call(this, '<iframe></iframe>').attr(this.options.attr);
+			$.fn.init.call(this, '<iframe></iframe>').attr(attr);
 		
 			//	Apend to hidden div
 			this._hiddenDiv().append(this);
