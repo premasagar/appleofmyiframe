@@ -17,8 +17,7 @@
 			if (this.initialize) this.initialize.apply(this, arguments);
 		};
 		
-		ret.prototype = {};
-		$.extend(ret.prototype, $.fn, proto);
+		ret.prototype = $.extend({}, $.fn, proto);
 		
 		return ret;
 	}
@@ -87,16 +86,19 @@
 			
 		},
 		
-		/*appendTo : function(obj)
+		// This can be commented out, once DOM mutation event listener functions
+		appendTo : function(obj)
 		{
+		    console.log('appendTo');
 			$.fn.appendTo.call(this, obj);
 			if (!this.attr('src') || this.attr('src')=='about:blank') {
 				var _this = this;
 				setTimeout(function(){
 					_this._swapDocuments();
 				}, 1);
-			}	
-		},*/
+			}
+			return this;	
+		},
 		
 		body : function(contents) {
 			var body = this.$('body');//document().body;
@@ -118,7 +120,7 @@
 			return head;
 		},
 		
-		matchSize : function() {
+		matchSize : function() { // optional args: matchWidth [bool], matchHeight [bool]
 			var matchWidth = (arguments.length>0) ? arguments[0] : true;
 			var matchHeight = (arguments.length>1) ? arguments[1] : true;
 			
@@ -129,10 +131,19 @@
 			return this;
 		},
 		
+		matchWidth : function(){
+		    return this.matchSize(true, false);
+		},
+		
+		matchHeight : function(){
+		    return this.matchSize(false, true);
+		},
+		
 		document : function(){
             return this[0].contentDocument || (this[0].contentWindow ? this[0].contentWindow.document : false);
 		},
 		
+		// Run jQuery in context of iframe document
 		$ : function(arg) {
 			return $(arg, this.document());
 		},
@@ -167,11 +178,13 @@
 		//	Insert body and head elements from old document into new document
 		_swapDocuments : function()
 		{
+		    console.log('swapDocs');
 			var newDocument = this.document();
 			var old_body = this.data('body');			
 						
 				
 			if (old_body){
+    			console.log('old_body', old_body);
 				oldDocument = old_body.ownerDocument;
 				
 				newDocument.open().close();
