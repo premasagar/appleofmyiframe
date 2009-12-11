@@ -169,8 +169,8 @@
 	                    height:'1px',
 	                    //visibility:'hidden',
 	                    position:'absolute',
-	                    left:'-1px',
-	                    top:'-1px'
+	                    left:'-1000px',
+	                    top:'-1000px'
 	                })
 	                .appendTo('body');
 		},
