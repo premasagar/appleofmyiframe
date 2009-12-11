@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>AppleOfMyIframe demo</title>
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.js"></script>
-  <script src="appleofmyiframe.js"></script>
+  <script src="appleofmyiframe-domevents.js"></script>
 </head>
 
 <body>
@@ -43,13 +43,13 @@
 			*/
 
 	 // External src
-   $.iframe('http://www.bbc.co.uk').appendTo('body'); // TODO: Error! This affects other iframes on the page, for some reason.
+     var iframe1 = $.iframe('http://www.bbc.co.uk').appendTo('body'); // TODO: Error! This affects other iframes on the page, for some reason.
 	 
 	 /*var iframe = $.iframe('<p>test</p>').appendTo('body').append('<p>ghgheh</p>');	 
 	 iframe.appendTo($('<div id="test"></div>').appendTo('body'));*/
-	 var iframe = $.iframe('<p>test</p>').appendTo('body');
+	 var iframe2 = $.iframe('<p>test</p>').appendTo('body');
 	 
-	 $.iframe('<p>hi there</p>', {attr: {style:'background-color: blue;'} }).appendTo('body');
+	 var iframe3 = $.iframe('<p>hi there</p>', {attr: {style:'background-color: blue;'} }).appendTo('body');
 	 
   </script>
 </body>
