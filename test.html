@@ -3,18 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <title>AppleOfMyIframe demo</title>
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.js"></script>
-  <script src="appleofmyiframe-domevents.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+  <script src="aomi-dev3.js"></script>
 </head>
 
 <body>
   <div>
     <p id="example-host-content">Mary had a little lamb</p>
   </div>
+  <button id="move-iframe">Move iframes, y'all</button>
   
   <script>
-    // Console debug logging - http://github.com/premasagar/console
-    var _ = (function(){var d=window,c=d.console,a=d.opera,b;if(!c){return(a&&a.postError)?function(){var g,e,h=a.postError,f=arguments;e=f.length;for(g=0;g<e;g++){h(f[g])}}:function(){}}else{if(/webkit/i.test(d.navigator.userAgent)){return function(){c.log(arguments)}}else{b=c.debug;return b?b:function(){var g,e,h=c.log,f=arguments;if(h){if(typeof h.apply==="function"){h.apply(c,f)}else{e=f.length;for(g=0;g<e;g++){h(f[g])}}}}}}})();
+  $('#move-iframe')
+    .click(function(){
+        var d = $('<div style="background-color:red; padding:1em;"></div>').appendTo('body');
+        i1.appendTo(d);
+        i2.appendTo(d);
+        i3.appendTo(d);
+    });
+    // debug
+    //var _ = console.log;
     
 		/*
     // Examples
@@ -43,13 +51,13 @@
 			*/
 
 	 // External src
-     var iframe1 = $.iframe('http://www.bbc.co.uk').appendTo('body'); // TODO: Error! This affects other iframes on the page, for some reason.
+     var i1 = $.iframe('http://google.co.uk').appendTo('body'); // TODO: Error! This affects other iframes on the page, for some reason.
 	 
 	 /*var iframe = $.iframe('<p>test</p>').appendTo('body').append('<p>ghgheh</p>');	 
 	 iframe.appendTo($('<div id="test"></div>').appendTo('body'));*/
-	 var iframe2 = $.iframe('<p>test</p>').appendTo('body');
+	 var i2 = $.iframe('<p>test</p>').appendTo('body');
 	 
-	 var iframe3 = $.iframe('<p>hi there</p>', {attr: {style:'background-color: blue;'} }).appendTo('body');
+	 var i3 = $.iframe('<p>hi there</p>', {attr: {style:'background-color: blue;'} }).appendTo('body');
 	 
   </script>
 </body>
