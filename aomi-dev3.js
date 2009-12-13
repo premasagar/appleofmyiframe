@@ -184,31 +184,49 @@
 		//	Insert body and head elements from old document into new document
 		_swapDocuments : function()
 		{
+		    var newDocument, old_body, new_body, old_head, new_head, moveNode;
+		
             if ($.browser.msie){
-                return;
+                return true;
             }
-			var newDocument = this.document();
-			var old_body = this.data('body');			
-						
+			newDocument = this.document();
+			old_body = this.data('body');
+			
+			moveNode = this._moveNode;			
+			if (typeof moveNode === 'undefined'){
+			    if (newDocument.adoptNode){
+			        moveNode = 'adoptNode';
+			    }
+			    else if (newDocument.importNode){
+			        moveNode = 'importNode';
+			    }
+			    else if (newDocument.cloneNode){
+			        moveNode = 'cloneNode';
+			    }
+			    else {
+			        moveNode = false;
+			    }
+			    this._moveNode = moveNode;
+			}
+			if (!moveNode){
+			    return false;
+			}
 				
-			if (old_body){
-				
+			if (old_body){				
 				//console.dir(old_body.innerHTML);
-				
-				
 				oldDocument = old_body.ownerDocument;
 				
 				newDocument.open();
                 newDocument.close();
 				
 				//var old_body = oldDocument.body;
-				var new_body = newDocument.body;
-				newDocument.adoptNode(old_body);
+				new_body = newDocument.body;
+				newDocument[moveNode](old_body, true); // 'true' has no effect for adoptNode, but is used for importNode and cloneNode
 				new_body.parentNode.replaceChild(old_body, new_body);
 				
-				var old_head = oldDocument.getElementsByTagName('head')[0];
-				var new_head = newDocument.getElementsByTagName('head')[0];
-				newDocument.adoptNode(old_head);
+				old_head = oldDocument.getElementsByTagName('head')[0];
+				new_head = newDocument.getElementsByTagName('head')[0];
+				newDocument[moveNode](old_head, true);
 				new_head.parentNode.replaceChild(old_head, new_head);
 			}
 			this.data('body', newDocument.body.cloneNode(true));
