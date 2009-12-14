@@ -228,7 +228,7 @@
                 }
                 
                 return function(document, $node){
-                    return document && $node && $node[0] && method ?
+                    return document && $node && $node[0] && method ?                    
                         document[method]($node[0], true):
                         false;
                 };
