@@ -32,13 +32,12 @@
     }
 
 
-    //    Id of hidden div
     var
         win = window,
         document = win.document,
         
         AppleOfMyIframe = new JqueryClass({
-            initialize : function(args){
+            initialize : function(){
                 var aomi = this, headContents, bodyContents, optionsFound, callback, attr;
                 
                 this.options = {
@@ -87,7 +86,8 @@
                 }
                 
                 // Absorb the iframe
-                $.fn.init.call(this, '<iframe></iframe>').attr(attr);
+                $.fn.init.call(this, '<iframe></iframe>')
+                    .attr(attr);
                 
                 // Setup 'ready' event, for when iframe element fires 'load' event
                 this._onload(function(){
@@ -155,14 +155,13 @@
                 
                 // Set body contents, and cache
                 if (bodyContents){
-                    this.body(bodyContents);
-                    this.data('body', this.body());
+                    this.data('body', this.body(bodyContents));
                 }
                 // Set head contents, and cache
                 if (headContents){
-                    this.head(headContents);
-                    this.data('head', this.head());
+                    this.data('head', this.head(headContents));
                 }
+                
                 if (this.options.autoresize){
                     this.matchSize();
                 }
@@ -175,7 +174,7 @@
                     className;
             
                 $.fn.appendTo.call(this, obj);
-                if (!this.attr('src') || this.attr('src') === 'about:blank') {
+                if (!this.attr('src') || this.attr('src') === 'about:blank'){
                     this._swapDocuments();
                 }
                 // IE6 repaint hack for external src iframes
@@ -245,6 +244,7 @@
                 if ($.browser.msie){
                     return true;
                 }
+                
                 old_body = this._moveNode(doc, this.data('body'));
                 old_head = this._moveNode(doc, this.data('head'));
                 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>AppleOfMyIframe demo</title>
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
-  <script src="aomi-dev3.js"></script>
+  <script src="aomi-dev4.js"></script>
 </head>
 
 <body>
@@ -14,6 +14,11 @@
   <button id="move-iframe">Move iframes, y'all</button>
   
   <script>
+  // Console logger
+  // http://github.com/premasagar/console
+  var _=(function(){var d=window,c=d.console,a=d.opera,b;if(!c){return(a&&a.postError)?function(){var g,e,h=a.postError,f=arguments;e=f.length;for(g=0;g<e;g++){h(f[g])}}:function(){}}else{if(/webkit/i.test(d.navigator.userAgent)){return function(){c.log(arguments)}}else{b=c.debug;return b?b:function(){var g,e,h=c.log,f=arguments;if(h){if(typeof h.apply==="function"){h.apply(c,f)}else{e=f.length;for(g=0;g<e;g++){h(f[g])}}}}}}})();
+  
+  
   $('#move-iframe')
     .click(function(){
         var d = $('<div style="background-color:red; padding:1em;"></div>').appendTo('body');
