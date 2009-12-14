@@ -175,7 +175,7 @@
             
                 $.fn.appendTo.call(this, obj);
                 if (!this.attr('src') || this.attr('src') === 'about:blank'){
-                    this._swapDocuments();
+                   // this._swapDocuments();
                 }
                 // IE6 repaint hack for external src iframes
                 else if (ie6) {
@@ -188,7 +188,13 @@
             _prepareDocument : function(){
                 var doc = this.document();            
                 doc.open();
-                doc.close();                
+                doc.close();       
+
+				//console.log(doc.firstChild.childNodes.length);
+				// Sorry about the DOM methods!
+				doc.firstChild.appendChild(doc.createElement('head'));
+				doc.firstChild.appendChild(doc.createElement('body'));
+         
                 this.body()
                     .css({margin:0, padding:0});
                 return this;
