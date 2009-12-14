@@ -227,9 +227,9 @@
                     method = false;
                 }
                 
-                return function(document, node){
-                    return document && node && method ?
-                        document[method](node, true):
+                return function(document, $node){
+                    return document && $node && $node[0] && method ?
+                        document[method]($node[0], true):
                         false;
                 };
             }()),
@@ -237,24 +237,24 @@
             //    Insert body and head elements from old document into new document
             _swapDocuments : function(){
                 var
-                    doc = this.document(),
-                    old_body,
-                    old_head;
+                    newDocument = this.document(),
+                    oldBody,
+                    oldHead;
         
                 if ($.browser.msie){
                     return true;
                 }
                 
-                old_body = this._moveNode(doc, this.data('body'));
-                old_head = this._moveNode(doc, this.data('head'));
+                oldBody = this._moveNode(newDocument, this.data('body'));
+                oldHead = this._moveNode(newDocument, this.data('head'));
                 
-                if (old_body){
-                    this.body().replaceWith(old_body);
-                    this.data('body', old_body.clone(true)); // TODO: Does this need to be a clone?
+                if (oldBody){
+                    this.body().replaceWith(oldBody);
+                    this.data('body', $(oldBody).clone(true)); // TODO: Does this need to be a clone?
                 }
-                if (old_head){
-                    this.head().replaceWith(old_head);
-                    this.data('head', old_head.clone(true)); // TODO: Does this need to be a clone?
+                if (oldHead){
+                    this.head().replaceWith(oldHead);
+                    this.data('head', $(oldHead).clone(true)); // TODO: Does this need to be a clone?
                 }
 
                 return this;
