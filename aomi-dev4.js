@@ -190,13 +190,13 @@
                 doc.open();
                 doc.close();       
 
-				//console.log(doc.firstChild.childNodes.length);
-				// Sorry about the DOM methods!
-				doc.firstChild.appendChild(doc.createElement('head'));
-				doc.firstChild.appendChild(doc.createElement('body'));
-         
+                this.$('html')
+                    .append(doc.createElement('head'))
+                    .append(doc.createElement('body')); // NOTE: doesn't work with .append('<head></head><body></body>');
+				
                 this.body()
                     .css({margin:0, padding:0});
+                
                 return this;
             },
             
