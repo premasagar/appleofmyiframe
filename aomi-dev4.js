@@ -75,9 +75,9 @@
                 
                 if ((bodyContents && !isUrl(bodyContents)) || headContents){                
                     this.ready(function(){
-                        this
-                            ._prepareDocument()
-                            .setContents(headContents, bodyContents);
+                        if (this._prepareDocument()){
+                            this.setContents(headContents, bodyContents);
+                        }
                     });
                 }
                 if (callback){
@@ -103,6 +103,10 @@
             ready : function(callback){
                 $.event.add(this, 'iframe.ready', callback); // We use $.event.add instead of this.bind()
                 return this;
+            },
+            
+            load: function(callback){
+            
             },
         
             document : function(){
@@ -147,7 +151,7 @@
             },
             
             setContents : function(headContents, bodyContents){
-                if (!bodyContents){
+                if (typeof bodyContents === 'undefined'){
                     bodyContents = headContents;
                     headContents = false;
                 }
@@ -184,8 +188,34 @@
                 return this;
             },
             
+            _avoidExternalSrcLeak : function(){
+                var doc = this.document(),
+                src = this.attr('src'),
+                externalSrcLeak = false;
+                                
+                if (!src || src === 'about:blank'){
+                    try {
+                        externalSrcLeak = (doc.URL !== src);
+                    }
+                    catch(e){
+                        externalSrcLeak = true;
+                    }
+                    if (externalSrcLeak){
+                        this.attr('src', 'about:blank');
+                        return false;
+                    }
+                }
+                return this;
+            },
+            
             _prepareDocument : function(){
-                var doc = this.document();            
+                var doc;
+                
+                if (!this._avoidExternalSrcLeak()){
+                    return false;
+                }
+                
+                doc = this.document();      
                 doc.open();
                 doc.close();       
 
