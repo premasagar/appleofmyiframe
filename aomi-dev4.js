@@ -100,11 +100,13 @@
                 return $(arg, this.document());
             },
             
+            // TODO: make this fire only on the first onload event
             ready : function(callback){
                 $.event.add(this, 'iframe.ready', callback); // We use $.event.add instead of this.bind()
                 return this;
             },
             
+            // TODO: make this fire on every onload event (as the current .ready() method already does)
             load: function(callback){
             
             },

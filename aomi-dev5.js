@@ -106,9 +106,9 @@ function pinIframeContent(iframe)
                 
                 if ((bodyContents && !isUrl(bodyContents)) || headContents){                
                     this.ready(function(){
-                        this
-                            ._prepareDocument()
-                            .setContents(headContents, bodyContents);
+                        if (this._prepareDocument()){
+                            this.setContents(headContents, bodyContents);
+                        }
                     });
                 }
                 if (callback){
@@ -132,9 +132,15 @@ function pinIframeContent(iframe)
                 return $(arg, this.document());
             },
             
+            // TODO: make this fire only on the first onload event
             ready : function(callback){
                 $.event.add(this, 'iframe.ready', callback); // We use $.event.add instead of this.bind()
                 return this;
+            },
+            
+            // TODO: make this fire on every onload event (as the current .ready() method already does)
+            load: function(callback){
+            
             },
         
             document : function(){
@@ -179,7 +185,7 @@ function pinIframeContent(iframe)
             },
             
             setContents : function(headContents, bodyContents){
-                if (!bodyContents){
+                if (typeof bodyContents === 'undefined'){
                     bodyContents = headContents;
                     headContents = false;
                 }
@@ -216,17 +222,41 @@ function pinIframeContent(iframe)
                 return this;
             },
             
+            _avoidExternalSrcLeak : function(){
+                var doc = this.document(),
+                src = this.attr('src'),
+                externalSrcLeak = false;
+                                
+                if (!src || src === 'about:blank'){
+                    try {
+                        externalSrcLeak = (doc.URL !== src);
+                    }
+                    catch(e){
+                        externalSrcLeak = true;
+                    }
+                    if (externalSrcLeak){
+                        this.attr('src', 'about:blank');
+                        return false;
+                    }
+                }
+                return this;
+            },
+            
             _prepareDocument : function(){
-                var doc = this.document();            
+                var doc;
+                
+                if (!this._avoidExternalSrcLeak()){
+                    return false;
+                }
+                
+                doc = this.document();            
                 doc.open();
-                doc.close();       
-
-				this.$('html')
-                    .append(doc.createElement('head'))
-                    .append(doc.createElement('body')); // NOTE: doesn't work with .append('<head></head><body></body>');
-         
+                doc.write('<head></head><body></body>');
+                doc.close();
+				
                 this.body()
                     .css({margin:0, padding:0});
+                
                 return this;
             },
             
