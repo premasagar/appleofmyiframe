@@ -1,6 +1,5 @@
 'use strict';
-//    TODO: onload events
-//    TODO: callback passed in constrctor, 
+
 (function($){ 
 
     function isUrl(str){
