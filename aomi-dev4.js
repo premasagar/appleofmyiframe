@@ -215,13 +215,10 @@
                     return false;
                 }
                 
-                doc = this.document();      
+                doc = this.document();            
                 doc.open();
-                doc.close();       
-
-                this.$('html')
-                    .append(doc.createElement('head'))
-                    .append(doc.createElement('body')); // NOTE: doesn't work with .append('<head></head><body></body>');
+                doc.write('<head></head><body></body>');
+                doc.close();
 				
                 this.body()
                     .css({margin:0, padding:0});
