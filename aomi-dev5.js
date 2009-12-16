@@ -119,6 +119,10 @@
                 return this;
             },
         
+            window : function(){
+                return this[0].contentWindow;
+            },
+        
             document : function(){
                 var iframe = this[0];
                 return iframe.contentDocument ? iframe.contentDocument : iframe.contentWindow.document;
@@ -199,28 +203,35 @@
                 return this;
             },
             
-            // Hack to prevent situation where an iframe with an external src is on page, as well as an injected iframe; if the iframes are moved in the DOM and the page reloaded, then the contents of the external src iframe may be duplicated into the injected iframe (seen in FF3.5 and others). This function re-appplies the 'about:blank' src attribute of injected iframes, to force a reload of its content
-            _avoidExternalSrcLeak : function(){
-                var doc = this.document(),
-                src = this.attr('src'),
-                externalSrcHasLeaked = false;
-                                
-                if (!src || src === 'about:blank'){
-                    try {
-                        externalSrcHasLeaked = (doc.URL !== 'about:blank');
-                    }
-                    catch(e){
-                        externalSrcHasLeaked = true;
-                    }
-                    if (externalSrcHasLeaked){
-                        this.attr('src', 'about:blank');
-                        return false;
-                    }
+            location : function(){
+                var win = this.window();
+                try {
+                    return win.location.href;
                 }
-                return this;
+                catch(e){
+                    return false;
+                }
             },
             
-            _pinIframeContent : function(){
+            hasExternalDocument : function(){
+                return this.location() !== 'about:blank'; // TODO: is this ever a blank string, or undedfined
+            },
+            
+            hasBlankSrc : function(){
+                var src = this.attr('src');
+                return !src || src === 'about:blank';
+            },
+            
+            // Hack to prevent situation where an iframe with an external src is on page, as well as an injected iframe; if the iframes are moved in the DOM and the page reloaded, then the contents of the external src iframe may be duplicated into the injected iframe (seen in FF3.5 and others). This function re-appplies the 'about:blank' src attribute of injected iframes, to force a reload of its content
+            _enforceSrc : function(){
+                if (this.hasBlankSrc() && this.hasExternalDocument()){
+                    this.attr('src', 'about:blank');
+                    return true; // iframe is being reloaded
+                }
+                return false; // iframe doesn't require intervention
+            },
+            
+            _pinIframeContent : function(){            
 	            var
 	                doc = this.document(),
 	                htmlElement = $(doc).find('html'),
@@ -231,21 +242,49 @@
 	            if (oldHtmlElement){
 		            oldHead = oldHtmlElement.find('head');
 		            oldBody = oldHtmlElement.find('body');
+		            htmlElement.empty();
 
+                    // Priority 1: adoptNode
                     if (doc.adoptNode){
-                        if (oldHead){
-                            doc.adoptNode(oldHead[0]);
+                        htmlElement
+                            // NOTE: even if oldHead or oldBody are null, or the adoptNode fails, this won't error
+                            .append(doc.adoptNode(oldHead[0]))
+                            .append(doc.adoptNode(oldBody[0]));
+                    }
+                    else {
+                        // Priority 2: appendChild 
+                        // attempt to append nodes from the other document; technically against the DOM spec, but supported by FF2 et al
+                        try {
+                            htmlElement
+                                .append(oldHead)
+                                .append(oldBody);
                         }
-                        if (oldBody){
-                            doc.adoptNode(oldBody[0]);
+                        catch(e){
+                            // Priority 3: importNode
+                            // this, and the remaining steps, will clone the nodes, so any references to nodes will be broken
+                            if (doc.importNode){
+                                htmlElement
+                                    .append(doc.importNode(oldHead[0]), true)
+                                    .append(doc.importNode(oldBody[0]), true);
+                            }
+                            else {
+                                // Priority 4: cloneNode
+                                // if 2) appendChild didn't work, then this probably won't either
+                                try {
+                                    htmlElement
+                                        .append(doc.cloneNode(oldBody[0]), true) // TODO: any difference with oldBody.clone(true) ?
+                                        .append(doc.cloneNode(oldBody[0]), true);
+                                }
+                                catch(e){
+                                    // Priority 5: reload iframe
+                                    this.reload();
+                                }
+                            }
                         }
                     }
-                    htmlElement
-                        .empty()
-                        .append(oldHead)
-                        .append(oldBody);
 	            }
 	            this._oldHtmlElement = htmlElement;
+	            return this;
             },
             
             _prepareDocument : function(){
@@ -264,8 +303,15 @@
                 var
                     aomi = this,
                     iframe = this[0],
-                    onload = function(){       
-                        if (aomi._avoidExternalSrcLeak()){
+                    enforceSrcDone = false,
+                    
+                    onload = function(){
+                        var iframeNeedsReload = false;
+                        if (!enforceSrcDone){
+                            iframeNeedsReload = aomi._enforceSrc();
+                            enforceSrcDone = true;
+                        }
+                        if (!iframeNeedsReload){
                             callback.call(aomi);
                         }
                     };
