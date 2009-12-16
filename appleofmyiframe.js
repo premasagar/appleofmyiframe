@@ -1,4 +1,5 @@
 'use strict';
+// TODO: Coding style: Standardise use of leading '$' for variables referring to jQuery collections - e.g. var $body = $('body'); - or simply avoid altogether
 
 (function($){ 
 
@@ -12,10 +13,8 @@
         return obj && !!obj.jquery;
     }
 
-    // 
-    //    Utility class to create jquery extension class easily
-    //    Mixin the passed argument with a clone of the jQuery prototype
-    //
+    // Utility class to create jquery extension class easily
+    // Mixin the passed argument with a clone of the jQuery prototype
     function JqueryClass(proto){
         return $.extend(
             function(){
@@ -35,18 +34,23 @@
         win = window,
         msie = $.browser.msie,
         ie6 = (msie && win.parseInt($.browser.version, 10) === 6),
+        cssPlain = {
+            margin:0,
+            padding:0,
+            borderWidth:0,
+            borderStyle:'none',
+            backgroundColor:'transparent'
+        },
         
         AppleOfMyIframe = new JqueryClass({
             initialize : function(){
-                var aomi = this, headContents, bodyContents, optionsFound, callback, attr;
+                var aomi = this, headContents, bodyContents, optionsFound, callback, attr, css;
                 
                 this.options = {
-                    // TODO: Verify which of these can be moved to CSS style property (allowtransparency, although non-standard, is required for IE to support iframes with transparent bodies
                     attr:{
                         scrolling:'no',
-                        frameborder:0,
-                        marginheight:0,
-                        allowtransparency:true
+                        frameBorder:0,
+                        allowTransparency:true
                     },
                     autoresize:true
                 };
@@ -69,14 +73,17 @@
                     }
                 });
                 attr = this.options.attr;
+                css = $.extend({}, cssPlain, this.options.css);
                 
                 // If a url supplied, add it as the iframe src, to load the page
                 if (isUrl(bodyContents)){
                     attr.src = bodyContents;
                 }
-                
-                if ((bodyContents && !isUrl(bodyContents)) || headContents){                
+                                
+                // If an injected iframe (i.e. without a document url set as the src)
+                else if (bodyContents || headContents){                
                     this
+                        // When the iframe is ready, prepare the document and its contents
                         .ready(function(){
                             if (!msie){
                                 this._prepareDocument();
@@ -85,22 +92,35 @@
                                 ._trimBody()
                                 .contents(headContents, bodyContents);
                         })
+                        // Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
                         .load(function(){
                             this._maintainDocumentContents();
                         });
                 }
+                
+                // Set the callback to fire when the iframe is ready
                 if (callback){
                     this.ready(callback);
                 }
                 
                 // Absorb the iframe
                 $.fn.init.call(this, '<iframe></iframe>')
+                    .css(css)
                     .attr(attr);
                 
                 // Setup 'ready' event, for when iframe element fires 'load' event
                 this._onload(function(){
                     $.event.trigger('iframe.ready', null, this); // Use $.event.trigger() instead of this.trigger()
                 });
+                
+                // Setup reload event
+                // Is this a really bad idea that will cause memory leaks? TODO: Is there a clean way to implement this only if we know it's needed - e.g. if the adoptNode, importNode stack in _maintainDocumentContents() fails?
+                var args = $.makeArray(arguments);
+                this.reload = function(){
+                    _('reload', args);
+                    aomi.initialize.apply(aomi, args);
+                    return aomi;
+                };
                 
                 return this;
             },
@@ -117,7 +137,7 @@
                 });
             },
             
-            // TODO: use a different custom event type to the .ready() method (e.g. iframe.load - but test if this triggers the load() method)
+            // TODO: use a different custom event type to the .ready() method (e.g. 'iframe.load' - but test if this would erroneously trigger the load() method, which is what would happen if the event type was 'load' (without the 'iframe.' prefix)
             load: function(callback){
                 $.event.add(this, 'iframe.ready', callback); // We use $.event.add instead of this.bind()
                 return this;
@@ -133,22 +153,20 @@
             },
         
             body : function(contents) {
-                var body = this.$('body');
-            
+                var body = this.$('body'); 
+                           
                 if (contents) {
                     this.$(contents).appendTo(body);
-                }
-            
+                }            
                 return body;
             },
 
             head : function(contents) {
                 var head = this.$('head');
-            
+                            
                 if (contents) {
                     this.$(contents).appendTo(head);
-                }
-            
+                }            
                 return head;
             },
         
@@ -190,13 +208,12 @@
             },
         
             appendTo : function(obj){
-                var className;            
                 $.fn.appendTo.call(this, obj);
                 
                 // IE6 repaint hack for external src iframes
-                if (ie6 && this.hasExternalDocument()) {
-                    className = 'ie6hack';
-                    this.addClass(className).removeClass(className);
+                // TODO: Is this needed anymore, now that the hidden div trick isn't in use?
+                if (ie6 && this.hasExternalDocument()){
+                    this._triggerRepaint();
                 }
                 return this;
             },
@@ -212,7 +229,7 @@
             },
             
             hasExternalDocument : function(){
-                return this.location() !== 'about:blank'; // TODO: is this ever a blank string, or undedfined
+                return this.location() !== 'about:blank'; // TODO: is this ever a blank string, or undefined?
             },
             
             hasBlankSrc : function(){
@@ -318,30 +335,37 @@
                 var doc = this.document();            
                 doc.open();
                 doc.write('<head></head><body></body>');
-                doc.close();
-                                
+                doc.close();                                
                 return this;
             },
             
             _trimBody : function(){
                 this.body()
-                    .css({margin:0, padding:0});
+                    .css(cssPlain);
                 return this;
+            },
+            
+            // e.g. for external iframes in IE6 - the contents isn't always shown at first
+            _triggerRepaint : function(){
+                var className = 'aomi-repaint';
+                this
+                    .addClass(className)
+                    .removeClass(className);
             },
             
             _onload : function(callback){
                 var
                     aomi = this,
                     iframe = this[0],
-                    enforceBlankDocDone = false,
+                    enforceBlankDone = false,
                     
                     onload = function(){
-                        var iframeNeedsReload = false;
-                        if (!enforceBlankDocDone){
-                            iframeNeedsReload = aomi._enforceBlankDoc();
-                            enforceBlankDocDone = true;
+                        var iframeToReload = false;
+                        if (!enforceBlankDone){
+                            iframeToReload = aomi._enforceBlankDoc();
+                            enforceBlankDone = true;
                         }
-                        if (!iframeNeedsReload){
+                        if (!iframeToReload){
                             callback.call(aomi);
                         }
                     };
