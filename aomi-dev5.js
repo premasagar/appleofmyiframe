@@ -1,36 +1,5 @@
 'use strict';
 
-function pinIframeContent(iframe)
-{
-	iframe.addEventListener('load', function(ev){
-
-		var iframe = ev.target;
-		var html = iframe.contentDocument.firstChild;
-		var lasthtml = iframe._lasthtml;//o.getUserData('last_html'); 
-
-
-		if (lasthtml) {
-
-			var oldhead = lasthtml.childNodes[0];
-			var newhead = html.childNodes[0];
-			var oldbody = lasthtml.childNodes[1];
-			var newbody = html.childNodes[1];
-
-			if (html.childNodes.length>0) html.removeChild(html.childNodes[0]);
-			if (html.childNodes.length>0) html.removeChild(html.childNodes[0]);
-
-			html.ownerDocument.adoptNode(oldhead);
-			html.ownerDocument.adoptNode(oldbody);
-
-			html.appendChild(oldhead);				
-			html.appendChild(oldbody);
-		}
-		iframe._lasthtml=iframe.contentDocument.firstChild;
-
-	}, true);
-}
-
-
 (function($){ 
 
     function isUrl(str){
@@ -105,11 +74,13 @@ function pinIframeContent(iframe)
                 }
                 
                 if ((bodyContents && !isUrl(bodyContents)) || headContents){                
-                    this.ready(function(){
-                        if (this._prepareDocument()){
-                            this.setContents(headContents, bodyContents);
-                        }
-                    });
+                    this
+                        .ready(function(){
+                            if (this._prepareDocument()){
+                                this.setContents(headContents, bodyContents);
+                                this._pinIframeContent();
+                            }
+                        });
                 }
                 if (callback){
                     this.ready(callback);
@@ -118,7 +89,6 @@ function pinIframeContent(iframe)
                 // Absorb the iframe
                 $.fn.init.call(this, '<iframe></iframe>')
                     .attr(attr);
-				pinIframeContent(this[0]);
                 
                 // Setup 'ready' event, for when iframe element fires 'load' event
                 this._onload(function(){
@@ -134,13 +104,17 @@ function pinIframeContent(iframe)
             
             // TODO: make this fire only on the first onload event
             ready : function(callback){
-                $.event.add(this, 'iframe.ready', callback); // We use $.event.add instead of this.bind()
-                return this;
+                var aomi = this;
+                return this.load(function outerCallback(){
+                    $.event.remove(aomi, 'iframe.ready', outerCallback);
+                    callback.apply(aomi, arguments);
+                });
             },
             
             // TODO: make this fire on every onload event (as the current .ready() method already does)
             load: function(callback){
-            
+                $.event.add(this, 'iframe.ready', callback); // We use $.event.add instead of this.bind()
+                return this;
             },
         
             document : function(){
@@ -208,10 +182,11 @@ function pinIframeContent(iframe)
             appendTo : function(obj){
                 var
                     ie6 = ($.browser.msie && win.parseInt($.browser.version, 10) === 6),
+                    src = this.attr('src'),
                     className;
             
                 $.fn.appendTo.call(this, obj);
-                if (!this.attr('src') || this.attr('src') === 'about:blank'){
+                if (!src || src === 'about:blank'){
                    // this._swapDocuments();
                 }
                 // IE6 repaint hack for external src iframes
@@ -222,25 +197,89 @@ function pinIframeContent(iframe)
                 return this;
             },
             
+            // Hack to prevent situation where an iframe with an external src is on page, as well as an injected iframe; if the iframes are moved in the DOM and the page reloaded, then the contents of the external src iframe may be duplicated into the injected iframe (seen in FF3.5 and others). This function re-appplies the 'about:blank' src attribute of injected iframes, to force a reload of its content
             _avoidExternalSrcLeak : function(){
                 var doc = this.document(),
                 src = this.attr('src'),
-                externalSrcLeak = false;
+                externalSrcHasLeaked = false;
                                 
                 if (!src || src === 'about:blank'){
                     try {
-                        externalSrcLeak = (doc.URL !== src);
+                        externalSrcHasLeaked = (doc.URL !== 'about:blank');
                     }
                     catch(e){
-                        externalSrcLeak = true;
+                        externalSrcHasLeaked = true;
                     }
-                    if (externalSrcLeak){
+                    if (externalSrcHasLeaked){
                         this.attr('src', 'about:blank');
                         return false;
                     }
                 }
                 return this;
             },
+            
+            /*
+            _pinIframeContent : function(){
+	            var
+	                doc = this.document(),
+	                htmlElement = $(doc).find('html'),
+	                oldHtmlElement = this._oldHtmlElement,
+	                oldHead,
+	                oldBody;
+
+	            if (oldHtmlElement){
+		            oldHead = oldHtmlElement.find('head');
+		            oldBody = oldHtmlElement.find('body');
+
+                    if (doc.adoptNode){
+                        if (oldHead){
+                            doc.adoptNode(oldHead[0]);
+                        }
+                        if (oldBody){
+                            doc.adoptNode(oldBody[0]);
+                        }
+                    }
+                    htmlElement
+                        .empty()
+                        .append(oldHead)
+                        .append(oldBody);
+	            }
+	            this._oldHtmlElement = htmlElement;
+            },
+            */
+            
+            _pinIframeContent : function(){
+                var aomi = this;	                
+                this._oldHtmlElement = $(this.document()).find('html');
+                
+                this.load(function(){
+	                var
+	                    doc = aomi.document(),
+	                    htmlElement = $(doc).find('html'),
+	                    oldHtmlElement = aomi._oldHtmlElement,
+	                    oldHead,
+	                    oldBody;
+
+	                oldHead = oldHtmlElement.find('head');
+	                oldBody = oldHtmlElement.find('body');
+
+                    if (doc.adoptNode){
+                        if (oldHead){
+                            doc.adoptNode(oldHead[0]);
+                        }
+                        if (oldBody){
+                            doc.adoptNode(oldBody[0]);
+                        }
+                    }
+                    
+                    htmlElement
+                        .empty()
+                        .append(oldHead)
+                        .append(oldBody);
+	            });
+	            return this;
+            },
+            
             
             _prepareDocument : function(){
                 var doc;
@@ -275,8 +314,9 @@ function pinIframeContent(iframe)
                     iframe.attachEvent('onload', onload);
                 }
                 return this;
-            },
+            }
             
+            /*
             _moveNode : (function(){
                 var method;
                 
@@ -325,6 +365,7 @@ function pinIframeContent(iframe)
 
                 return this;
             }
+            */
         });
     
     // Extend jquery with the iframe method
