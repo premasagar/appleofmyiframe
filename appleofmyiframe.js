@@ -34,6 +34,8 @@
     var
         win = window,
         document = win.document,
+        msie = $.browser.msie,
+        ie6 = (msie && win.parseInt($.browser.version, 10) === 6),
         
         AppleOfMyIframe = new JqueryClass({
             initialize : function(){
@@ -76,9 +78,10 @@
                 if ((bodyContents && !isUrl(bodyContents)) || headContents){                
                     this
                         .ready(function(){
-                            this
-                                ._prepareDocument()
-                                .setContents(headContents, bodyContents);
+                            if (!msie){
+                                this._prepareDocument();
+                            }
+                            this.setContents(headContents, bodyContents);
                         })
                         .load(function(){
                             this._pinIframeContent();
@@ -187,16 +190,13 @@
         
             appendTo : function(obj){
                 var
-                    ie6 = ($.browser.msie && win.parseInt($.browser.version, 10) === 6),
                     src = this.attr('src'),
                     className;
             
                 $.fn.appendTo.call(this, obj);
-                if (!src || src === 'about:blank'){
-                   // this._swapDocuments();
-                }
+                
                 // IE6 repaint hack for external src iframes
-                else if (ie6) {
+                if (ie6 && this.hasExternalDocument()) {
                     className = 'ie6hack';
                     this.addClass(className).removeClass(className);
                 }
