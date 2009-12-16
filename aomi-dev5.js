@@ -76,10 +76,12 @@
                 if ((bodyContents && !isUrl(bodyContents)) || headContents){                
                     this
                         .ready(function(){
-                            if (this._prepareDocument()){
-                                this.setContents(headContents, bodyContents);
-                                this._pinIframeContent();
-                            }
+                            this
+                                ._prepareDocument()
+                                .setContents(headContents, bodyContents);
+                        })
+                        .load(function(){
+                            this._pinIframeContent();
                         });
                 }
                 if (callback){
@@ -218,7 +220,6 @@
                 return this;
             },
             
-            /*
             _pinIframeContent : function(){
 	            var
 	                doc = this.document(),
@@ -246,49 +247,9 @@
 	            }
 	            this._oldHtmlElement = htmlElement;
             },
-            */
-            
-            _pinIframeContent : function(){
-                var aomi = this;	                
-                this._oldHtmlElement = $(this.document()).find('html');
-                
-                this.load(function(){
-	                var
-	                    doc = aomi.document(),
-	                    htmlElement = $(doc).find('html'),
-	                    oldHtmlElement = aomi._oldHtmlElement,
-	                    oldHead,
-	                    oldBody;
-
-	                oldHead = oldHtmlElement.find('head');
-	                oldBody = oldHtmlElement.find('body');
-
-                    if (doc.adoptNode){
-                        if (oldHead){
-                            doc.adoptNode(oldHead[0]);
-                        }
-                        if (oldBody){
-                            doc.adoptNode(oldBody[0]);
-                        }
-                    }
-                    
-                    htmlElement
-                        .empty()
-                        .append(oldHead)
-                        .append(oldBody);
-	            });
-	            return this;
-            },
-            
             
             _prepareDocument : function(){
-                var doc;
-                
-                if (!this._avoidExternalSrcLeak()){
-                    return false;
-                }
-                
-                doc = this.document();            
+                var doc = this.document();            
                 doc.open();
                 doc.write('<head></head><body></body>');
                 doc.close();
@@ -303,8 +264,10 @@
                 var
                     aomi = this,
                     iframe = this[0],
-                    onload = function(){
-                        callback.call(aomi);
+                    onload = function(){       
+                        if (aomi._avoidExternalSrcLeak()){
+                            callback.call(aomi);
+                        }
                     };
                 // W3C
                 iframe.onload = onload;
