@@ -64,6 +64,7 @@
                         optionsFound = true;
                         $.extend(true, aomi.options, arg);
                     }
+                    // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers. Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in _maintainDocumentContents for falling back from adoptNode be taken into a more generic function that is used here?
                     else if (!bodyContents && typeof arg !== 'undefined'){
                         bodyContents = arg;
                     }
@@ -113,15 +114,6 @@
                     $.event.trigger('iframe.ready', null, this); // Use $.event.trigger() instead of this.trigger()
                 });
                 
-                // Setup reload event
-                // Is this a really bad idea that will cause memory leaks? TODO: Is there a clean way to implement this only if we know it's needed - e.g. if the adoptNode, importNode stack in _maintainDocumentContents() fails?
-                var args = $.makeArray(arguments);
-                this.reload = function(){
-                    _('reload', args);
-                    aomi.initialize.apply(aomi, args);
-                    return aomi;
-                };
-                
                 return this;
             },
         
@@ -170,6 +162,7 @@
                 return head;
             },
         
+            // TODO: If $bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
             matchSize : function() {
                 var
                     args = arguments,
@@ -273,9 +266,9 @@
                                     node
                             );
                         }
-                        // NOTE: this.reload() not yet implemented
+                        // TODO: this.reload() not yet implemented
                         if (method === 'reload'){
-                            this.reload();
+                            // this.reload();
                         }
                         else {                        
                             // NOTE: even if oldHead or oldBody are null, or the adoptNode fails, this won't error
@@ -381,11 +374,22 @@
         });
     
     // Extend jquery with the iframe method
-    $.extend({
-        iframe : function(headContents, bodyContents, options, callback) {
-            return new AppleOfMyIframe(headContents, bodyContents, options, callback);
+    $.extend(
+        true,
+        {
+            iframe : function(headContents, bodyContents, options, callback) {
+                return new AppleOfMyIframe(headContents, bodyContents, options, callback);
+            },
+            fn : {
+                // TODO: Allow multiple elements in a collection to be replaced with iframes, e.g. $('.toReplace').intoIframe()
+                intoIframe : function(headContents, options, callback){
+                    var aomi = $.iframe(headContents, this, options, callback);
+                    aomi.replaceAll(this);
+                    return aomi;
+                }
+            }
         }
-    });
+    );
     
 }(jQuery));
 
