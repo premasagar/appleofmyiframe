@@ -64,7 +64,7 @@
                         optionsFound = true;
                         $.extend(true, aomi.options, arg);
                     }
-                    // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers. Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in _maintainDocumentContents for falling back from adoptNode be taken into a more generic function that is used here?
+                    // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers. Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
                     else if (!bodyContents && typeof arg !== 'undefined'){
                         bodyContents = arg;
                     }
@@ -95,7 +95,7 @@
                         })
                         // Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
                         .load(function(){
-                            this._maintainDocumentContents();
+                            this.reload();
                         });
                 }
                 
@@ -109,9 +109,9 @@
                     .css(css)
                     .attr(attr);
                 
-                // Setup 'ready' event, for when iframe element fires 'load' event
+                // Setup 'load' event, for when iframe element fires 'load' event
                 this._onload(function(){
-                    $.event.trigger('iframe.ready', null, this); // Use $.event.trigger() instead of this.trigger()
+                    $.event.trigger('aomi.load', null, this); // Use $.event.trigger() instead of this.trigger()
                 });
                 
                 return this;
@@ -124,14 +124,14 @@
             ready : function(callback){
                 var aomi = this;
                 return this.load(function outerCallback(){
-                    $.event.remove(aomi, 'iframe.ready', outerCallback);
+                    $.event.remove(aomi, 'aomi.load', outerCallback);
                     callback.apply(aomi, $.makeArray(arguments));
                 });
             },
             
             // TODO: use a different custom event type to the .ready() method (e.g. 'iframe.load' - but test if this would erroneously trigger the load() method, which is what would happen if the event type was 'load' (without the 'iframe.' prefix)
             load: function(callback){
-                $.event.add(this, 'iframe.ready', callback); // We use $.event.add instead of this.bind()
+                $.event.add(this, 'aomi.load', callback); // We use $.event.add instead of this.bind()
                 return this;
             },
         
@@ -240,18 +240,18 @@
             },
             
             // If an injected iframe fires the onload event move than once, then its content will be lost, so we need to pull the nodes from  IE doesn't fire onload event more than once.
-            _maintainDocumentContents : function(){
+            reload : function(){
 	            var
 	                doc = this.document(),
 	                htmlElement = $(doc).find('html'),
-	                oldHtmlElement = this._oldHtmlElement,
+	                oldHtmlElement = this._oldHtmlElement, // A cached htmlElement, from the last time the iframe reloaded
 	                oldHead, oldBody, method, appendWith;
 
+                // This will run each time the iframe reloads, except for the very first time the iframe is inserted
 	            if (oldHtmlElement){
 		            oldHead = oldHtmlElement.find('head');
 		            oldBody = oldHtmlElement.find('body');
 		            htmlElement.empty();
-		            method = $.iframe.appendMethod;
 		            
 		            // Re-usable append function, for trying different DOM methods            
 		            appendWith = function(method){
@@ -262,14 +262,14 @@
                                     doc[method](node, true)
                             );
                         }
-                        if (method !== 'reload'){
+                        if (method !== 'reboot'){
                             // NOTE: even if oldHead or oldBody are null, or the adoptNode fails, this should never error
                             appendNode(oldHead[0]);
                             appendNode(oldBody[0]);
                         }
                         else {
-                            // TODO: Add reload() method to re-initialize $.iframe() with the original constructor arguments
-                            /* this.reload(); */
+                            // TODO: Add reboot() method to re-initialize $.iframe() with the original constructor arguments. Add an event type for it
+                            /* this.reboot(); */
                         }
                         return method;
                     };
@@ -303,17 +303,20 @@
                                         method = appendWith('cloneNode');
                                     }
                                     catch(e2){
-                                        // #5: reload iframe
-                                        // NOTE: this.reload() is not yet implemented
-                                        method = appendWith('reload');
+                                        // #5: reboot iframe
+                                        method = appendWith('reboot');
                                     }
                                 }
                             }
                         }
-                        // The append method will be stored as a property of the _maintainDocumentContents method in the AppleOfMyIframe prototype, so it only needs to run once on the first iframe, to determine the best method to use.
+                        
+                        // TODO: Fix incomplete images in WebKit. The problem: when a document is dropped while images in the document are still loading, then when the nodes are copied over to the new document, the image does not continue to load, and remains blank. The solution: a method that re-applies the src attribute of images, after adding them to the new document. Possibly check the image's 'complete' property, and only if it is not complete, then re-apply the src attribute. Need to verify if there is a performance impact of re-applying the src of an image that has already been cached.
+                        
+                        // The append method will be stored as a property of the $.iframe method. T, so it only needs to run once on the first iframe, to determine the best method to use.
                         $.iframe.appendMethod = method;
                     }
 	            }
+	            // Update the cached htmlElement with the new one
 	            this._oldHtmlElement = htmlElement;
 	            return this;
             },
