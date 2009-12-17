@@ -11,6 +11,7 @@
   <style>
     .stealth {
         position: absolute;
+        overflow:hidden;
         width:1px;
         height:1px;
         top:0;
@@ -63,7 +64,60 @@
   <script>
   // Console logger
   // http://github.com/premasagar/console
-  var _=(function(){var d=window,c=d.console,a=d.opera,b;if(!c){return(a&&a.postError)?function(){var g,e,h=a.postError,f=arguments;e=f.length;for(g=0;g<e;g++){h(f[g])}}:function(){}}else{if(/webkit/i.test(d.navigator.userAgent)){return function(){c.log(arguments)}}else{b=c.debug;return b?b:function(){var g,e,h=c.log,f=arguments;if(h){if(typeof h.apply==="function"){h.apply(c,f)}else{e=f.length;for(g=0;g<e;g++){h(f[g])}}}}}}})();
+  var
+  _ = (function(){
+	    var
+	        win = window,
+	        ua = win.navigator.userAgent,
+	        console = win.console,
+	        opera = win.opera,
+	        debug;
+	    
+        // Doesn't support console API
+	    if (!console){
+	        // Opera 
+	        return (opera && opera.postError) ?
+                 function(){
+                     var i, argLen, log = opera.postError, args = arguments;
+                     argLen = args.length;
+		             for (i=0; i < argLen; i++){
+			             log(args[i]);
+		             }
+                 } :
+                 function(){};
+	    }
+	    // Temporary for WebKit, while its console has a bug in calling debug directly or log.apply
+	    else if (/webkit/i.test(ua)){	    
+            return function(){
+                var i, argLen, args = arguments;
+                argLen = args.length;
+		        for (i=0; i < argLen; i++){
+			        console.log(args[i]);
+		        }
+            };
+        }
+        else {
+	        debug = console.debug;
+	        return debug ? // FF Firebug
+		        debug :
+		        function(){
+			        var i, argLen, log = console.log, args = arguments;
+			        if (log){ // WebKit
+				        if (typeof log.apply === 'function'){
+					        log.apply(console, args);
+				        }
+				        else { // IE8
+					        argLen = args.length;
+					        for (i=0; i < argLen; i++){
+						        log(args[i]);
+					        }
+				        }
+			        }
+		        };
+		}
+    })();
+    
+    // ****************************************
   
   
     $('#browser .user-agent')
@@ -79,14 +133,15 @@
     var stealth = $('<div></div>')
         .addClass('stealth')
         .appendTo('body');
-    var iHidden = $.iframe('<p>blah</p>')
+    var iHidden = $.iframe('<p>blah</p>', {attr:{id:'iHidden'}})
         .ready(function(){
             stealth.appendTo('body');
-            this.ready(function(){
+            
+            this.one('restore', function(ev, appendMethod){
                 $('#append-method')
                     .show()
                     .find('.report')
-                        .text($.iframe.appendMethod);
+                        .text(appendMethod);
                 stealth.remove();
                 delete stealth;
                 delete iHidden;
@@ -109,18 +164,18 @@
 
      // External src iframe
      var i1 = $.iframe('http://google.co.uk')
-        .appendTo('#stage')
-        .attr('id', 'i1');
+        .attr('id', 'i1')
+        .appendTo('#stage');
 
      
      // Injected iframes
      var i2 = $.iframe('<p>test</p>')
-        .appendTo('#stage')
-        .attr('id', 'i2');
+        .attr('id', 'i2')
+        .appendTo('#stage');
      
      var i3 = $.iframe('<p>hi there</p>', {attr:{frameBorder:1}, css:{backgroundColor:'blue'}})
-        .appendTo('#stage')
-        .attr('id', 'i3');
+        .attr('id', 'i3')
+        .appendTo('#stage');
 	    
 	 
 	/*
