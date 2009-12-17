@@ -9,14 +9,14 @@
   -->
   <script src="appleofmyiframe.js"></script>
   <style>
-    #tests {
-        padding-bottom:2.62em;
+    #tests, #browser, #append-method {
+        float:left;
         margin:0 6.85em 2.62em 0;
+        padding-bottom:2.62em;
         border-bottom:1px solid #ccc;
-        float:left;
     }
-    #browser {
-        float:left;
+    #append-method {
+        display:none;
     }
     #stage {
         clear:both;
@@ -45,6 +45,11 @@
     <textarea class="user-agent" rows="3" cols="42"></textarea>
   </div>
   
+  <div id="append-method">
+    <h2>Append method</h2>
+    <p class="report"></p>
+  </div>
+  
   <div id="stage">
   </div>
   
@@ -65,10 +70,17 @@
   
   $('#move-iframes')
     .click(function(){
-        var d = $('<div style="background-color:red; padding:1em;"></div>').appendTo('body');
-        i1.appendTo(d);
-        i2.appendTo(d);
-        i3.appendTo(d);
+        var div = $('<div style="background-color:red; padding:1em;"></div>').appendTo('body');
+        i1.appendTo(div);
+        i2.appendTo(div);
+        i3.appendTo(div);
+        
+        i2.ready(function(){
+            $('#append-method')
+                .show()
+                .find('.report')
+                    .text(i1._maintainDocumentContents.appendMethod);
+        });
     });
     
   $('#reload-page')
