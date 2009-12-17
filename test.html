@@ -79,8 +79,7 @@
     var stealth = $('<div></div>')
         .addClass('stealth')
         .appendTo('body');
-    var iHidden = $.iframe('<p></p>')
-        .appendTo(stealth)
+    var iHidden = $.iframe('<p>blah</p>')
         .ready(function(){
             stealth.appendTo('body');
             this.ready(function(){
@@ -92,7 +91,8 @@
                 delete stealth;
                 delete iHidden;
             });
-        });
+        })
+        .appendTo(stealth);
   
     $('#move-iframes')
         .click(function(){
