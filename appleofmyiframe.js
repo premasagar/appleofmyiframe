@@ -109,6 +109,7 @@
                                 // Iframe document persistance: Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
                         })
                         .load(function(){
+                            _(this.attr('id') + ': about to run cache()');
                             this.cache();
                         });
                 }                
@@ -175,13 +176,19 @@
                 return this.bind('ready', callback);
             },
         
+            // TODO: Is there a sure-fire way to detect cross-domain documents, without resorting to try{}catch(){} ?
             window : function(){
-                return this[0].contentWindow;
+                try {
+                    return $(this[0].contentWindow);
+                }
+                catch(e){
+                    return $([]);
+                }
             },
         
             document : function(){
-                var iframe = this[0];
-                return iframe.contentDocument ? iframe.contentDocument : iframe.contentWindow.document;
+                // return a jQuery wrapper around the document, or a blank jQuery collection if it cannot be accessed
+                return $(this[0].contentDocument || this.window().document || []);
             },
         
             body : function(contents) {
@@ -248,13 +255,8 @@
             },
             
             location : function(){
-                var win = this.window();
-                try {
-                    return win.location.href;
-                }
-                catch(e){
-                    return false;
-                }
+                var location = this.window().attr('location');
+                return location ? location.href : null;
             },
             
             // TODO: Add an additional method to determine if the external document is cross-domain or not
@@ -270,19 +272,27 @@
             // If an injected iframe fires the onload event move than once, then its content will be lost, so we need to pull the nodes from  IE doesn't fire onload event more than once.
             cache : function(){
 	            var
+	                aomi = this,
 	                doc = this.document(),
-	                htmlElement = $(doc).find('html'),
-	                oldHtmlElement = this._oldHtmlElement, // A cached htmlElement, from the last time the iframe reloaded
-	                oldHead, oldBody, method, appendWith;
+	                htmlElement, oldHtmlElement, oldHead, oldBody, method, appendWith;
 	                
+	            if (!doc.length){
+	                _(this.attr('id') + ': no doc');
+	                return this._enforceBlankDoc();
+	            }
+	            // Retrieve cached htmlElement, from the last time the iframe reloaded
+	            oldHtmlElement = this._oldHtmlElement;	            
+	            
                 // This will run each time the iframe reloads, except for the very first time the iframe is inserted
 	            if (oldHtmlElement){
 		            oldHead = oldHtmlElement.find('head');
 		            oldBody = oldHtmlElement.find('body');
-		            htmlElement.empty();
+		            htmlElement = doc.find('html')
+		                .empty();
 		            
 		            // Re-usable append function, for trying different DOM methods            
 		            appendWith = function(method){
+		                _(method);
                         function appendNode(node){
                             htmlElement.append(
                                 method === 'appendChild' ?
@@ -296,7 +306,7 @@
                             appendNode(oldBody[0]);
                         }
                         else {
-                            this.initialize();
+                            aomi.initialize();
                         }
                         return method;
                     };
@@ -351,10 +361,12 @@
             },
             
             _prepareDocument : function(){
-                var doc = this.document();            
-                doc.open();
-                doc.write('<head></head><body></body>');
-                doc.close();                                
+                var doc = this.document()[0];
+                if (doc){
+                    doc.open();
+                    doc.write('<head></head><body></body>');
+                    doc.close();
+                }
                 return this;
             },
             
@@ -374,6 +386,7 @@
             
             // Hack to prevent situation where an iframe with an external src is on page, as well as an injected iframe; if the iframes are moved in the DOM and the page reloaded, then the contents of the external src iframe may be duplicated into the injected iframe (seen in FF3.5 and others). This function re-appplies the 'about:blank' src attribute of injected iframes, to force a reload of its content
             _enforceBlankDoc : function(){
+                _(this.attr('id'), 'blankSrc', this.hasBlankSrc(), 'externalDoc', this.hasExternalDocument());
                 if (this.hasBlankSrc() && this.hasExternalDocument()){
                     this.attr('src', 'about:blank');
                     this.trigger('reload');
@@ -386,7 +399,7 @@
                 var
                     aomi = this,
                     iframe = this[0],
-                    enforceBlankDone = false,
+                    enforceBlankDone = false, // TODO: This ensures we only check for leaky external iframes once, on page reload. However, there seems to be situations where we may need to check every time - e.g. when iframe is removed from and added back into the doc, perhaps before its fully loaded the first time. The disadvantage of that, other than performance, is that if a link is followed from an injected iframe, then an external document will load in the iframe, and we don't want to reset it back to the blank src.
                     
                     onload = function(){
                         var iframeToReload = false;
