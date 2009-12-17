@@ -242,38 +242,34 @@
             // If an injected iframe fires the onload event move than once, then its content will be lost, so we need to pull the nodes from  IE doesn't fire onload event more than once.
             _maintainDocumentContents : function(){
 	            var
-	                fn = this._maintainDocumentContents,
 	                doc = this.document(),
 	                htmlElement = $(doc).find('html'),
 	                oldHtmlElement = this._oldHtmlElement,
-	                oldHead,
-	                oldBody,
-	                method,
-	                appendWith;
+	                oldHead, oldBody, method, appendWith;
 
 	            if (oldHtmlElement){
 		            oldHead = oldHtmlElement.find('head');
 		            oldBody = oldHtmlElement.find('body');
 		            htmlElement.empty();
-		            method = fn.appendMethod;
+		            method = $.iframe.appendMethod;
 		            
 		            // Re-usable append function, for trying different DOM methods            
 		            appendWith = function(method){
                         function appendNode(node){
                             htmlElement.append(
-                                method ?
-                                    doc[method](node, true) :
-                                    node
+                                method === 'appendChild' ?
+                                    node :
+                                    doc[method](node, true)
                             );
                         }
-                        // TODO: this.reload() not yet implemented
-                        if (method === 'reload'){
-                            // this.reload();
-                        }
-                        else {                        
-                            // NOTE: even if oldHead or oldBody are null, or the adoptNode fails, this won't error
+                        if (method !== 'reload'){
+                            // NOTE: even if oldHead or oldBody are null, or the adoptNode fails, this should never error
                             appendNode(oldHead[0]);
                             appendNode(oldBody[0]);
+                        }
+                        else {
+                            // TODO: Add reload() method to re-initialize $.iframe() with the original constructor arguments
+                            /* this.reload(); */
                         }
                         return method;
                     };
@@ -292,7 +288,7 @@
                             // #2: appendChild 
                             // append nodes straight from the other document; technically against the DOM spec, but supported by FF2 et al
                             try {
-                                method = appendWith(null);
+                                method = appendWith('appendChild');
                             }
                             catch(e){
                                 // #3: importNode
@@ -308,16 +304,14 @@
                                     }
                                     catch(e2){
                                         // #5: reload iframe
-                                        // TODO: Add reload() method to re-initialize $.iframe() with the original constructor arguments
-                                        /*                                        
+                                        // NOTE: this.reload() is not yet implemented
                                         method = appendWith('reload');
-                                        */
                                     }
                                 }
                             }
                         }
                         // The append method will be stored as a property of the _maintainDocumentContents method in the AppleOfMyIframe prototype, so it only needs to run once on the first iframe, to determine the best method to use.
-                        fn.appendMethod = method;
+                        $.iframe.appendMethod = method;
                     }
 	            }
 	            this._oldHtmlElement = htmlElement;
