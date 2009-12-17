@@ -134,18 +134,17 @@
         .addClass('stealth')
         .appendTo('body');
     var iHidden = $.iframe('<p>blah</p>', {attr:{id:'iHidden'}})
-        .ready(function(){
-            stealth.appendTo('body');
-            
-            this.one('restore', function(ev, appendMethod){
-                $('#append-method')
-                    .show()
-                    .find('.report')
-                        .text(appendMethod);
-                stealth.remove();
-                delete stealth;
-                delete iHidden;
-            });
+        .one('restore', function(ev, appendMethod){
+            $('#append-method')
+                .show()
+                .find('.report')
+                    .text(appendMethod);
+            stealth.remove();
+            delete stealth;
+            delete iHidden;
+        })
+        .load(function(){
+            this.appendTo(stealth);
         })
         .appendTo(stealth);
   
