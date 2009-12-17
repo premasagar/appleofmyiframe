@@ -69,18 +69,18 @@
     });
   
   $('#move-iframes')
-    .click(function(){
-        var div = $('<div style="background-color:red; padding:1em;"></div>').appendTo('body');
-        i1.appendTo(div);
-        i2.appendTo(div);
-        i3.appendTo(div);
-        
+    .click(function(){        
         i2.ready(function(){
             $('#append-method')
                 .show()
                 .find('.report')
                     .text(i1._maintainDocumentContents.appendMethod);
         });
+        
+        var div = $('<div style="background-color:red; padding:1em;"></div>').appendTo('body');
+        i1.appendTo(div);
+        i2.appendTo(div);
+        i3.appendTo(div);
     });
     
   $('#reload-page')
