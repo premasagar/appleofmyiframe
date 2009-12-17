@@ -9,6 +9,13 @@
   -->
   <script src="appleofmyiframe.js"></script>
   <style>
+    .stealth {
+        position: absolute;
+        width:1px;
+        height:1px;
+        top:0;
+        left:0;
+    }
     #tests, #browser, #append-method {
         float:left;
         margin:0 6.85em 2.62em 0;
@@ -59,7 +66,7 @@
   var _=(function(){var d=window,c=d.console,a=d.opera,b;if(!c){return(a&&a.postError)?function(){var g,e,h=a.postError,f=arguments;e=f.length;for(g=0;g<e;g++){h(f[g])}}:function(){}}else{if(/webkit/i.test(d.navigator.userAgent)){return function(){c.log(arguments)}}else{b=c.debug;return b?b:function(){var g,e,h=c.log,f=arguments;if(h){if(typeof h.apply==="function"){h.apply(c,f)}else{e=f.length;for(g=0;g<e;g++){h(f[g])}}}}}}})();
   
   
-  $('#browser .user-agent')
+    $('#browser .user-agent')
     .val(window.navigator.userAgent)
     .focus(function(){
         var ta = this;
@@ -67,41 +74,53 @@
             ta.select();
         });
     });
-  
-  $('#move-iframes')
-    .click(function(){        
-        i2.ready(function(){
-            $('#append-method')
-                .show()
-                .find('.report')
-                    .text($.iframe.appendMethod);
-        });
-        
-        var div = $('<div style="background-color:red; padding:1em;"></div>').appendTo('body');
-        i1.appendTo(div);
-        i2.appendTo(div);
-        i3.appendTo(div);
-    });
-    
-  $('#reload-page')
-    .click(function(){
-        window.location.href = window.location.href;
-    });
 
-	 // External src iframe
+    // Determine appendMethod
+    var stealth = $('<div></div>')
+        .addClass('stealth')
+        .appendTo('body');
+    var iHidden = $.iframe('<p></p>')
+        .appendTo(stealth)
+        .ready(function(){
+            stealth.appendTo('body');
+            this.ready(function(){
+                $('#append-method')
+                    .show()
+                    .find('.report')
+                        .text($.iframe.appendMethod);
+                stealth.remove();
+                delete stealth;
+                delete iHidden;
+            });
+        });
+  
+    $('#move-iframes')
+        .click(function(){
+            var div = $('<div style="background-color:red; padding:1em;"></div>').appendTo('body');
+            i1.appendTo(div);
+            i2.appendTo(div);
+            i3.appendTo(div);
+        });
+
+    $('#reload-page')
+        .click(function(){
+            window.location.href = window.location.href;
+        });
+
+     // External src iframe
      var i1 = $.iframe('http://google.co.uk')
         .appendTo('#stage')
         .attr('id', 'i1');
 
-	 
-	 // Injected iframes
-	 var i2 = $.iframe('<p>test</p>')
-	    .appendTo('#stage')
-	    .attr('id', 'i2');
-	 
-	 var i3 = $.iframe('<p>hi there</p>', {attr:{frameBorder:1}, css:{backgroundColor:'blue'}})
-	    .appendTo('#stage')
-	    .attr('id', 'i3');
+     
+     // Injected iframes
+     var i2 = $.iframe('<p>test</p>')
+        .appendTo('#stage')
+        .attr('id', 'i2');
+     
+     var i3 = $.iframe('<p>hi there</p>', {attr:{frameBorder:1}, css:{backgroundColor:'blue'}})
+        .appendTo('#stage')
+        .attr('id', 'i3');
 	    
 	 
 	/*
