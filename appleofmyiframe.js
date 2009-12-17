@@ -85,6 +85,11 @@
                 });
                 attr = this.options.attr;
                 
+                // Setup the 'ready' event to trigger the first time an iframe loads. This must be set before any other 'load' callbacks.
+                this.one('load', function(){
+                    this.trigger('ready');
+                });
+                
                 // If a url supplied, add it as the iframe src, to load the page
                 if (isUrl(bodyContents)){
                     attr.src = bodyContents;
@@ -100,31 +105,25 @@
                             }
                             this
                                 ._trimBody()
-                                .contents(headContents, bodyContents)
-                                .cache()
-                                // Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
-                                .load(function(){
-                                    this.cache();
-                                });
+                                .contents(headContents, bodyContents);
+                                // Iframe document persistance: Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
                         })
-                }
+                        .load(function(){
+                            this.cache();
+                        });
+                }                
                 
-                // Set the callback to fire when the iframe is ready
+                // If a callback was supplied, fire it on 'ready'
                 if (callback){
                     this.ready(callback);
                 }
                 
-                // Absorb the iframe - this needs to be executed before any native onload handlers are applied to the iframe element
                 return this
+                    // Absorb the iframe - this needs to be executed before any native onload handlers are applied to the iframe element
                     ._absorbIframe(this.options)                                
-                    // Setup event triggers
-                    // iframe element fires 'load' event
+                    // Pin the 'load' event to the iframe element's native 'onload' event
                     ._onload(function(){
                         this.trigger('load');
-                    })
-                    // First time iframe loads
-                    .one('load', function(){
-                        this.trigger('ready');
                     })
                     // Init complete
                     .trigger('init');
@@ -201,7 +200,7 @@
                 return head;
             },
         
-            // TODO: If $bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
+            // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
             matchSize : function() {
                 var
                     args = arguments,
@@ -217,6 +216,7 @@
                 if (matchHeight){
                     this.height(height);
                 }
+                // TODO: Decide if this event should be renamed or removed, since there may be confusion that it would fire on every kind of iframe document, body or window resize.
                 return this.trigger('resize', [width, height]);
             },
             

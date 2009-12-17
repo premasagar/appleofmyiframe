@@ -85,6 +85,11 @@
                 });
                 attr = this.options.attr;
                 
+                // Setup the 'ready' event to trigger the first time an iframe loads. This must be set before any other 'load' callbacks.
+                this.one('load', function(){
+                    this.trigger('ready');
+                });
+                
                 // If a url supplied, add it as the iframe src, to load the page
                 if (isUrl(bodyContents)){
                     attr.src = bodyContents;
@@ -100,31 +105,25 @@
                             }
                             this
                                 ._trimBody()
-                                .contents(headContents, bodyContents)
-                                .cache()
-                                // Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
-                                .load(function(){
-                                    this.cache();
-                                });
+                                .contents(headContents, bodyContents);
+                                // Iframe document persistance: Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
                         })
-                }
+                        .load(function(){
+                            this.cache();
+                        });
+                }                
                 
-                // Set the callback to fire when the iframe is ready
+                // If a callback was supplied, fire it on 'ready'
                 if (callback){
                     this.ready(callback);
                 }
                 
-                // Absorb the iframe - this needs to be executed before any native onload handlers are applied to the iframe element
                 return this
+                    // Absorb the iframe - this needs to be executed before any native onload handlers are applied to the iframe element
                     ._absorbIframe(this.options)                                
-                    // Setup event triggers
-                    // iframe element fires 'load' event
+                    // Pin the 'load' event to the iframe element's native 'onload' event
                     ._onload(function(){
                         this.trigger('load');
-                    })
-                    // First time iframe loads
-                    .one('load', function(){
-                        this.trigger('ready');
                     })
                     // Init complete
                     .trigger('init');
