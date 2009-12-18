@@ -1,3 +1,13 @@
+/*
+    by.Dharmafly() with [
+        premasagar.rose && (jonathan.lister + alistair.james)
+    ];
+    license: mit
+    url: http://github.com/premasagar/appleofmyiframe
+*/
+
+// TODO: Possible loading flow: pass 'ready' callback to _onload(), then in the 'ready' handler, trigger 'load' and pass 'load' callback to _onload().
+
 'use strict';
 // TODO: Coding style: Standardise use of leading '$' for variables referring to jQuery collections - e.g. var $body = $('body'); - or simply avoid altogether
 
@@ -59,7 +69,8 @@
                     attr:{
                         scrolling:'no',
                         frameBorder:0,
-                        allowTransparency:true
+                        allowTransparency:true,
+                        src:'about:blank'
                     },
                     autoresize:true,
                     css:$.extend({}, cssPlain)
@@ -68,7 +79,7 @@
                 // All arguments are optional, so we need to determine which have been supplied
                 $.each(args.reverse(), function(i, arg){
                     if (!callback && $.isFunction(arg)){
-                        callback = arg;
+                        callback = arg;s
                     }
                     else if (!optionsFound && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
                         optionsFound = true;
@@ -103,13 +114,33 @@
                             if (!msie){
                                 this._prepareDocument();
                             }
-                            this
-                                ._trimBody()
-                                .contents(headContents, bodyContents);
-                                // Iframe document persistance: Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
-                        })
-                        .load(function(){
-                            this.cache();
+                            // Check if the iframe is all OK to continue loading (e.g. guarding against browser bugs with external src leakage)
+                            if (this._okToLoad()){
+                                this
+                                    ._trim()
+                                    .contents(headContents, bodyContents)
+                                    // Iframe document persistance: Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
+                                    .cache()
+                                    .load(function(){
+                                        this.cache();
+                                                      
+                                        // IE6 repaint hack for external src iframes
+                                        // TODO: Is this needed anymore, now that the hidden div trick isn't in use?
+                                        if (ie6 && this.hasExternalDocument()){
+                                            this._repaint();
+                                        }
+                                    });
+                            }
+                            else {
+                                // There's a problem with the iframe. Reload.
+                                // TODO: Add some kind of count, to guard against infinite reloading
+                                this
+                                    // Trigger the 'ready' event once the reload completes
+                                    .one('load', function(){
+                                        this.trigger('ready');
+                                    })
+                                    .reload();
+                            }
                         });
                 }                
                 
@@ -142,9 +173,7 @@
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
             trigger : function(type, data){
-                // Console.log the events
-                //_('*' + type + '*', data, this);
-            
+                //_(this.attr('id') + ': *' + type + '*');
                 $.event.trigger(type + '.' + ns, data, this);
                 return this;
             },
@@ -173,6 +202,11 @@
             
             ready : function(callback){
                 return this.bind('ready', callback);
+            },
+            
+            reload : function(){
+                this.attr('src', this.attr('src'));
+                return this.trigger('reload');
             },
         
             window : function(){
@@ -238,13 +272,8 @@
             },
         
             appendTo : function(obj){
-                $.fn.appendTo.call(this, obj);                
-                // IE6 repaint hack for external src iframes
-                // TODO: Is this needed anymore, now that the hidden div trick isn't in use?
-                if (ie6 && this.hasExternalDocument()){
-                    this._triggerRepaint();
-                }
-                return this.trigger('appendTo');
+                $.fn.appendTo.call(this, obj);
+                return this;
             },
             
             location : function(){
@@ -259,7 +288,8 @@
             
             // TODO: Add an additional method to determine if the external document is cross-domain or not
             hasExternalDocument : function(){
-                return this.location() !== 'about:blank'; // TODO: is this ever a blank string, or undefined?
+                var loc = this.location();
+                return (loc && (loc !== 'about:blank') && (loc !== window.location.href)); // NOTE: the comparison with the host window href is because, in WebKit, an injected iframe may have a location set to that url. This would also match an iframe that has a src matching the host document url, though this seems unlikely to take place in practice.
             },
             
             hasBlankSrc : function(){
@@ -295,7 +325,7 @@
                             appendNode(oldHead[0]);
                             appendNode(oldBody[0]);
                         }
-                        else {
+                        else { // TODO: This aspect of initialize(), where the constructor args are cached, is not yet implemented
                             this.initialize();
                         }
                         return method;
@@ -358,46 +388,42 @@
                 return this;
             },
             
-            _trimBody : function(){
+            _trim : function(){
                 this.body()
                     .css(cssPlain);
                 return this;
             },
             
             // Trigger a repaint of the iframe - e.g. for external iframes in IE6, where the contents aren't always shown at first
-            _triggerRepaint : function(){
+            _repaint : function(){
                 var className = ns + '-repaint';
                 this
                     .addClass(className)
                     .removeClass(className);
+                return this.trigger('repaint');;
             },
             
-            // Hack to prevent situation where an iframe with an external src is on page, as well as an injected iframe; if the iframes are moved in the DOM and the page reloaded, then the contents of the external src iframe may be duplicated into the injected iframe (seen in FF3.5 and others). This function re-appplies the 'about:blank' src attribute of injected iframes, to force a reload of its content
-            _enforceBlankDoc : function(){
-                if (this.hasBlankSrc() && this.hasExternalDocument()){
-                    this.attr('src', 'about:blank');
-                    this.trigger('reload');
-                    return true; // iframe is being reloaded
+            _hasSrcMismatch : function(){
+                return (this.hasBlankSrc() && this.hasExternalDocument());
+            },
+            
+            // A check to prevent the situation where an iframe with an external src is on page, as well as an injected iframe; if the iframes are moved in the DOM and the page reloaded, then the contents of the external src iframe may be duplicated into the injected iframe (seen in FF3.5 and others). This function re-appplies the 'about:blank' src attribute of injected iframes, to force a reload of its content
+            _okToLoad : function(){
+                var ok = true;
+                if (this._hasSrcMismatch()){ // add other tests here, if required
+                    ok = false;
                 }
-                return false; // iframe doesn't require intervention
+                return ok;
             },
             
             _onload : function(callback){
                 var
                     aomi = this,
-                    iframe = this[0],
-                    enforceBlankDone = false,
-                    
+                    iframe = this[0],                    
                     onload = function(){
-                        var iframeToReload = false;
-                        if (!enforceBlankDone){
-                            iframeToReload = aomi._enforceBlankDoc();
-                            enforceBlankDone = true;
-                        }
-                        if (!iframeToReload){
-                            callback.call(aomi);
-                        }
+                        callback.call(aomi);
                     };
+                    
                 // W3C
                 iframe.onload = onload;
                 

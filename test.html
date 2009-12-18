@@ -119,7 +119,7 @@
     
     // ****************************************
   
-  
+(function(){
     $('#browser .user-agent')
     .val(window.navigator.userAgent)
     .focus(function(){
@@ -129,6 +129,7 @@
         });
     });
 
+/*
     // Determine appendMethod
     var stealth = $('<div></div>')
         .addClass('stealth')
@@ -147,13 +148,16 @@
             this.appendTo(stealth);
         })
         .appendTo(stealth);
+ */
+        
   
     $('#move-iframes')
         .click(function(){
-            var div = $('<div style="background-color:red; padding:1em;"></div>').appendTo('body');
-            i1.appendTo(div);
-            i2.appendTo(div);
-            i3.appendTo(div);
+            var div = $('<div style="background-color:red; padding:1em;"></div>')
+                .appendTo('body');
+            $.each(window.i, function(){
+                this.appendTo(div);
+            });
         });
 
     $('#reload-page')
@@ -161,21 +165,28 @@
             window.location.href = window.location.href;
         });
 
-     // External src iframe
-     var i1 = $.iframe('http://javascript.crockford.com/code.html')
-        .attr('id', 'i1')
-        .appendTo('#stage');
+    window.i = [];
+    count = 0;
 
-     
-     // Injected iframes
-     var i2 = $.iframe('<p>test</p>')
-        .attr('id', 'i2')
-        .appendTo('#stage');
-     
-     var i3 = $.iframe('<p>hi there</p>', {attr:{frameBorder:1}, css:{backgroundColor:'blue'}})
-        .attr('id', 'i3')
-        .appendTo('#stage');
-	    
+    // External src iframes
+    window.i.push(
+        $.iframe('http://google.co.uk')
+            .attr('id', 'i' + count++)
+            .appendTo('#stage'),
+            
+        $.iframe('http://javascript.crockford.com/code.html')
+            .attr('id', 'i' + count++)
+            .appendTo('#stage'),
+            
+        $.iframe('<p>test</p>')
+            .attr('id', 'i' + count++)
+            .appendTo('#stage'),
+        
+        $.iframe('<p>hi there</p>', {attr:{frameBorder:1}, css:{backgroundColor:'blue'}})
+            .attr('id', 'i' + count++)
+            .appendTo('#stage')            
+    );
+	
 	 
 	/*
     // Example usage
@@ -202,6 +213,7 @@
     $.iframe('<p>blah2</p>').matchSize()
       .appendTo('body');
 	*/
+})();
   </script>
 </body>
 </html>
