@@ -74,7 +74,7 @@
                         src:'about:blank'
                     },
                     autoresize:true,
-                    target:'_parent',
+                    target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
                     css:$.extend({}, cssPlain)
                 };
                 
@@ -133,8 +133,9 @@
                                     .load(function(){
                                         this.cache();
                                     })
+                                    // Let anchor links open targets in the default target
                                     .live('a', 'click', function(){
-                                        if (!$(this).attr('target')){
+                                        if (!$(this).attr('target') && $(this).attr('href')){
                                             $(this).attr('target', aomi.options.target);
                                         }
                                     });
