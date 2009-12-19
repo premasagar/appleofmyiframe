@@ -79,7 +79,7 @@
                 // All arguments are optional, so we need to determine which have been supplied
                 $.each(args.reverse(), function(i, arg){
                     if (!callback && $.isFunction(arg)){
-                        callback = arg;s
+                        callback = arg;
                     }
                     else if (!optionsFound && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
                         optionsFound = true;
