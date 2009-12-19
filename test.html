@@ -73,7 +73,7 @@
                 <button id="move-iframes">Move iframes to a new DOM node</button>
             </li>
             <li>
-                <button id="reload-page">Reload host document</button>
+                <button id="reload-page">Reload host window</button>
             </li>
         </ol>
       </div>
@@ -153,6 +153,8 @@
     })();
     
     // ****************************************
+    
+    // AOMI TESTS
   
 (function(){
     var
@@ -215,26 +217,26 @@
     
     window.i.push(
         // External src iframes
-        $.iframe('http://google.co.uk')
-            .attr('id', 'i' + count++)
-            .appendTo('#stage1'),
-            
         $.iframe('http://javascript.crockford.com/code.html')
             .attr('id', 'i' + count++)
             .appendTo('#stage1'),
         
+        $.iframe('http://google.it')
+            .attr('id', 'i' + count++)
+            .appendTo('#stage1'),
+            
         // Injected iframes
-        $.iframe('<p>An injected iframe. No background color is set.</p>')
+        $.iframe('<p>An injected iframe. No body background color is set on the iframe, so it should be transparent. Text in the iframe document has styling, including a background color.</p>')
             .attr('id', 'i' + count++)
             .css({
-                padding:'1.62em',
+                padding:'2.62em',
             })
             .appendTo('#stage1')
             .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
             .matchSize(),
         
         $.iframe(
-            '<p>An injected iframe, with a background color set.</p>',
+            '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\' document contents.</p>',
             {
                 attr:{
                     id:'i' + count++
