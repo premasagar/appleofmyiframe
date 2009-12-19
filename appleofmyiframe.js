@@ -490,6 +490,7 @@
             },
             fn : {
                 // TODO: Allow multiple elements in a collection to be replaced with iframes, e.g. $('.toReplace').intoIframe()
+                // TODO: Where the element doesn't have an explicit width set, the iframe will not be able to resize to it. One hacky method to determine the width: display the element inline, measure its width, then return the display and then set the width of the iframe.
                 intoIframe : function(headContents, options, callback){
                     var aomi = $.iframe(headContents, this, options, callback);
                     aomi.replaceAll(this);
