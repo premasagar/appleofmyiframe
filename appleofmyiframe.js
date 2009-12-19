@@ -7,9 +7,9 @@
 */
 
 // TODO: Possible loading flow: pass 'ready' callback to _onload(), then in the 'ready' handler, trigger 'load' and pass 'load' callback to _onload().
+// TODO: Coding style: Standardise use of leading '$' for variables referring to jQuery collections - e.g. var $body = $('body'); - or simply avoid altogether
 
 'use strict';
-// TODO: Coding style: Standardise use of leading '$' for variables referring to jQuery collections - e.g. var $body = $('body'); - or simply avoid altogether
 
 (function($){ 
 
@@ -21,6 +21,10 @@
     }
     function isJQuery(obj){
         return obj && !!obj.jquery;
+    }
+    // Copied from jQuery src - required for .live() and .die() methods
+    function liveConvert(type, selector){
+        return ["live", type, selector.replace(/\./g, "`").replace(/ /g, "|")].join(".");
     }
 
     // Utility class to create jquery extension class easily
@@ -43,7 +47,6 @@
     var
         ns = 'aomi',
         win = window,
-        document = win.document,
         msie = $.browser.msie,
         ie6 = (msie && win.parseInt($.browser.version, 10) === 6),
         cssPlain = {
@@ -59,7 +62,7 @@
                 var
                     aomi = this,
                     args = this._constructorArgs,
-                    headContents, bodyContents, optionsFound, callback, attr, css;
+                    headContents, bodyContents, optionsFound, callback, attr;
                 
                 if (!args){
                     args = $.makeArray(arguments);
@@ -75,7 +78,8 @@
                     },
                     autoresize:true,
                     target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
-                    css:$.extend({}, cssPlain)
+                    css:$.extend({}, cssPlain),
+                    title:''
                 };
                 
                 // All arguments are optional, so we need to determine which have been supplied
@@ -108,18 +112,16 @@
                     attr.src = bodyContents;
                     
                     // IE6 repaint - required a) for external iframes that are added to the doc while they are hidden, and b) for some external iframes that are moved in the DOM (e.g. google.co.uk)
-                    this.load(function(){
-                        if (ie6){
-                            this._repaint();
-                        }
-                    });
+                    if (ie6){
+                        this.ready(this.repaint);
+                    }
                 }
                                 
                 // If an injected iframe (i.e. without a document url set as the src)
-                else if (bodyContents || headContents){                
+                else if (bodyContents || headContents){
                     this
                         // When the iframe is ready, prepare the document and its contents
-                        .ready(function(){
+                        .ready(function(){            
                             if (!msie){
                                 this._prepareDocument();
                             }
@@ -128,11 +130,10 @@
                                 this
                                     ._trim()
                                     .contents(headContents, bodyContents)
+                                    .title(this.options.title)
                                     // Iframe document persistance: Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
                                     .cache()
-                                    .load(function(){
-                                        this.cache();
-                                    })
+                                    .load(this.cache)
                                     // Let anchor links open targets in the default target
                                     .live('a', 'click', function(){
                                         if (!$(this).attr('target') && $(this).attr('href')){
@@ -181,8 +182,8 @@
             },
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
-            trigger : function(type, data){
-                //_(this.attr('id') + ': *' + type + '*');
+            trigger : function(type, data){                
+                // _(this.attr('id') + ': *' + type + '*');
                 $.event.trigger(type + '.' + ns, data, this);
                 return this;
             },
@@ -206,13 +207,16 @@
             },
             
             live: function(selector, type, fn){
-                function liveConvert(type, selector){
-	                return ["live", type, selector.replace(/\./g, "`").replace(/ /g, "|")].join(".");
-                }            
 		        var proxy = $.event.proxy(fn);
 		        proxy.guid += selector + type;         
 		        this.body()
 		            .bind(liveConvert(type, selector), selector, proxy);         
+		        return this;
+	        },
+	        
+	        die: function(selector, type, fn){
+		        this.body()
+		            .unbind(liveConvert(type, selector), fn ? {guid: fn.guid + selector + type} : null);
 		        return this;
 	        },
             
@@ -228,6 +232,15 @@
                 this.attr('src', this.attr('src'));
                 return this.trigger('reload');
             },
+            
+            // Trigger a repaint of the iframe - e.g. for external iframes in IE6, where the contents aren't always shown at first
+            repaint : function(){
+                var className = ns + '-repaint';
+                this
+                    .addClass(className)
+                    .removeClass(className);
+                return this.trigger('repaint');
+            },
         
             window : function(){
                 return this[0].contentWindow;
@@ -238,29 +251,31 @@
                 return iframe.contentDocument ? iframe.contentDocument : iframe.contentWindow.document;
             },
         
-            body : function(contents) {
-                var body = this.$('body');                           
-                if (contents){
-                    this.$(contents).appendTo(body);
-                }            
-                return body;
+            body : function(contents){
+                var body = this.$('body');
+                return contents ? body.append(contents) : body;
             },
 
             head : function(contents){
                 var head = this.$('head');                            
-                if (contents){
-                    this.$(contents).appendTo(head);
+                return contents ? head.append(contents) : head;
+            },
+            
+            title : function(title){
+                if (typeof title !== 'undefined'){
+                    this.document().title = this.options.title = title;
+                    return this;
                 }
-                return head;
+                return this.document().title;
             },
             
             style : function(cssText){
                 this.head('<style>' + cssText + '</style>');
-                return this;
+                return this.options.autoresize ? this.matchSize() : this;
             },
         
             // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
-            matchSize : function() {
+            matchSize : function(){
                 var
                     args = arguments,
                     matchWidth = (args.length>0) ? args[0] : true,
@@ -298,6 +313,10 @@
         
             appendTo : function(obj){
                 $.fn.appendTo.call(this, obj);
+                if (ie6){
+                    this.repaint();
+                }
+                this.trigger('appendTo');
                 return this;
             },
             
@@ -396,7 +415,9 @@
                         
                         // The append method will be stored as a property of the $.iframe method. T, so it only needs to run once on the first iframe, to determine the best method to use.
                         $.iframe.appendMethod = method;
-                        this.trigger('restore', method);
+                        this
+                            .title(this.options.title)
+                            .trigger('restore', method);
                     }
 	            }
 	            // Update the cached htmlElement with the new one
@@ -417,15 +438,6 @@
                 this.body()
                     .css(cssPlain);
                 return this;
-            },
-            
-            // Trigger a repaint of the iframe - e.g. for external iframes in IE6, where the contents aren't always shown at first
-            _repaint : function(){
-                var className = ns + '-repaint';
-                this
-                    .addClass(className)
-                    .removeClass(className);
-                return this.trigger('repaint');;
             },
             
             _hasSrcMismatch : function(){
