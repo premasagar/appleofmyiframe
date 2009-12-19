@@ -128,18 +128,22 @@
                             // Check if the iframe is all OK to continue loading (e.g. guarding against browser bugs with external src leakage)
                             if (this._okToLoad()){
                                 this
-                                    ._trim()
-                                    .contents(headContents, bodyContents)
-                                    .title(this.options.title)
-                                    // Iframe document persistance: Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
-                                    .cache()
+                                    // Setup event listeners
+                                    .bind('contents', this.matchSize)
+                                    .bind('style', this.matchSize)
                                     .load(this.cache)
                                     // Let anchor links open targets in the default target
                                     .live('a', 'click', function(){
                                         if (!$(this).attr('target') && $(this).attr('href')){
                                             $(this).attr('target', aomi.options.target);
                                         }
-                                    });
+                                    })
+                                    // Change contents
+                                    ._trim()
+                                    .title(this.options.title)
+                                    .contents(headContents, bodyContents)
+                                    // Iframe document persistance: Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
+                                    .cache();
                             }
                             else {
                                 // There's a problem with the iframe. Reload.
@@ -177,8 +181,9 @@
                 return this;
             },
         
-            $ : function(arg) {
-                return $(arg, this.document());
+            $ : function(arg){
+                var doc = this.document();
+                return arg ? $(arg, doc) : doc;
             },
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
@@ -243,12 +248,24 @@
             },
         
             window : function(){
-                return this[0].contentWindow;
+                var win = this[0].contentWindow;
+                try {
+                    return $(win);
+                }
+                catch(e){
+                    return $([]);
+                }
+            },
+            
+            location : function(){
+                var
+                    win = this.window(),
+                    loc = win.attr('location');
+                return loc ? loc.href : null;
             },
         
             document : function(){
-                var iframe = this[0];
-                return iframe.contentDocument ? iframe.contentDocument : iframe.contentWindow.document;
+                return $(this.window().attr('document') || []);
             },
         
             body : function(contents){
@@ -263,15 +280,16 @@
             
             title : function(title){
                 if (typeof title !== 'undefined'){
-                    this.document().title = this.options.title = title;
+                    this.options.title = title;
+                    this.$().attr('title', title);
                     return this;
                 }
-                return this.document().title;
+                return this.$().attr('title');
             },
             
             style : function(cssText){
                 this.head('<style>' + cssText + '</style>');
-                return this.options.autoresize ? this.matchSize() : this;
+                return this.trigger('style');
             },
         
             // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
@@ -298,16 +316,9 @@
                 if (typeof bodyContents === 'undefined'){
                     bodyContents = headContents;
                     headContents = false;
-                }  
-                if (bodyContents){
-                    this.body(bodyContents);
                 }
-                if (headContents){
-                    this.head(headContents);
-                }                
-                if (this.options.autoresize){
-                    this.matchSize();
-                }
+                this.body(bodyContents);
+                this.head(headContents);
                 return this.trigger('contents');
             },
         
@@ -320,20 +331,11 @@
                 return this;
             },
             
-            location : function(){
-                var win = this.window();
-                try {
-                    return win.location.href;
-                }
-                catch(e){
-                    return false;
-                }
-            },
-            
-            // TODO: Add an additional method to determine if the external document is cross-domain or not
+            // TODO: Useful method to add: hasCrossDomainDocument(), as opposed to a document served from the same domain
             hasExternalDocument : function(){
                 var loc = this.location();
-                return (loc && (loc !== 'about:blank') && (loc !== window.location.href)); // NOTE: the comparison with the host window href is because, in WebKit, an injected iframe may have a location set to that url. This would also match an iframe that has a src matching the host document url, though this seems unlikely to take place in practice.
+                return !loc || (loc !== 'about:blank' && loc !== win.location.href);
+                // NOTE: the comparison with the host window href is because, in WebKit, an injected iframe may have a location set to that url. This would also match an iframe that has a src matching the host document url, though this seems unlikely to take place in practice.
             },
             
             hasBlankSrc : function(){
@@ -344,10 +346,15 @@
             // If an injected iframe fires the onload event move than once, then its content will be lost, so we need to pull the nodes from  IE doesn't fire onload event more than once.
             cache : function(){
 	            var
-	                doc = this.document(),
-	                htmlElement = $(doc).find('html'),
-	                oldHtmlElement = this._oldHtmlElement, // A cached htmlElement, from the last time the iframe reloaded
-	                oldHead, oldBody, method, appendWith;
+	                doc = this.$()[0],
+	                htmlElement, oldHtmlElement, oldHead, oldBody, method, appendWith;
+	                
+	            if (!doc){
+	                return this;
+	            }
+	            htmlElement = this.$('html');
+	            // Check if there's already a cached htmlElement, from the last time the iframe loaded
+	            oldHtmlElement = this._oldHtmlElement;	                
 	                
                 // This will run each time the iframe reloads, except for the very first time the iframe is inserted
 	            if (oldHtmlElement){
@@ -427,10 +434,12 @@
             },
             
             _prepareDocument : function(){
-                var doc = this.document();            
-                doc.open();
-                doc.write('<head></head><body></body>');
-                doc.close();                                
+                var doc = this.$()[0];
+                if (doc){        
+                    doc.open();
+                    doc.write('<head></head><body></body>');
+                    doc.close();
+                }
                 return this;
             },
             
