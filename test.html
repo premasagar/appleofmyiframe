@@ -9,6 +9,12 @@
   -->
   <script src="appleofmyiframe.js"></script>
   <style>
+    button {
+        font-size:1.6em;
+        padding:0.16em;
+        display:block;
+        margin:0 0.38em 0.38em 0;
+    }
     .stealth {
         position: absolute;
         overflow:hidden;
@@ -26,12 +32,31 @@
     #append-method {
         display:none;
     }
-    #stage {
+    #tests .desc {
+        font-size:1.6em;
+    }
+    .stage {
+        float:left;
+        width:38.2%;
+        padding:1.62em;
+        margin-right:1.62em;
+        border:1px solid #ccc;
+    }
+    #stage1 {
         clear:both;
+        color:#336;
+        background-color:#fff;
+        border-color:#336;
+    }
+    #stage2 {
+        background-color:#336;
+        color:#ccf;
+        border-color:#ccf;
     }
     iframe {
         display:block;
         margin:1.62em !important;
+        border:1px solid #336 !important;
     }
   </style>
 </head>
@@ -41,24 +66,34 @@
   
   <div id="tests">
       <h2>Tests</h2>  
-      <p>Do the three iframes stay intact throughout?</p>
+      <p class="desc">Do the iframes and their contents stay intact throughout?</p>
       <div id="controls">
-          <button id="move-iframes">1. Move iframes within the DOM</button>
-          <button id="reload-page">2. Reload the page</button>
+        <ol>
+            <li>
+                <button id="move-iframes">Move iframes to a new DOM node</button>
+            </li>
+            <li>
+                <button id="reload-page">Reload host document</button>
+            </li>
+        </ol>
       </div>
   </div>
   
-  <div id="browser">
-    <h2>Your browser</h2>
-    <textarea class="user-agent" rows="3" cols="42"></textarea>
-  </div>
-  
-  <div id="append-method">
+  <div id="append-method" class="report">
     <h2>Append method</h2>
     <p class="report"></p>
   </div>
   
-  <div id="stage">
+  <div id="browser" class="report">
+    <h2>Your browser</h2>
+    <textarea class="user-agent" rows="3" cols="42"></textarea>
+  </div>
+  
+  <div id="stage1" class="stage">
+    <h2>Over here</h2>
+  </div>
+  <div id="stage2" class="stage">
+    <h2>Over there</h2>
   </div>
   
   <script>
@@ -120,12 +155,19 @@
     // ****************************************
   
 (function(){
+    var
+        win = window,
+        iframes = win.i = [],
+        counter = 0
+    win.i = [];
+    count = 0;;
+
     $('#browser .user-agent')
     .val(window.navigator.userAgent)
     .focus(function(){
-        var ta = this;
+        var textarea = this;
         window.setTimeout(function(){
-            ta.select();
+            textarea.select();
         });
     });
 
@@ -151,40 +193,62 @@
  */
         
   
-    $('#move-iframes')
-        .click(function(){
-            var div = $('<div style="background-color:red; padding:1em;"></div>')
-                .appendTo('body');
-            $.each(window.i, function(){
-                this.appendTo(div);
-            });
-        });
+    $('button#move-iframes')
+        .toggle(
+            function(){
+                $.each(window.i, function(){
+                    this.appendTo('#stage2');
+                });
+            },
+            function(){
+                $.each(window.i, function(){
+                    this.appendTo('#stage1');
+                });
+            }
+        );
 
-    $('#reload-page')
+    $('button#reload-page')
         .click(function(){
             window.location.href = window.location.href;
         });
 
-    window.i = [];
-    count = 0;
-
-    // External src iframes
+    
     window.i.push(
+        // External src iframes
         $.iframe('http://google.co.uk')
             .attr('id', 'i' + count++)
-            .appendTo('#stage'),
+            .appendTo('#stage1'),
             
         $.iframe('http://javascript.crockford.com/code.html')
             .attr('id', 'i' + count++)
-            .appendTo('#stage'),
-            
-        $.iframe('<p>test</p>')
-            .attr('id', 'i' + count++)
-            .appendTo('#stage'),
+            .appendTo('#stage1'),
         
-        $.iframe('<p>hi there</p>', {attr:{frameBorder:1}, css:{backgroundColor:'blue'}})
+        // Injected iframes
+        $.iframe('<p>An injected iframe. No background color is set.</p>')
             .attr('id', 'i' + count++)
-            .appendTo('#stage')            
+            .css({
+                padding:'1.62em',
+            })
+            .appendTo('#stage1')
+            .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
+            .matchSize(),
+        
+        $.iframe(
+            '<p>An injected iframe, with a background color set.</p>',
+            {
+                attr:{
+                    id:'i' + count++
+                },
+                css:{
+                    backgroundColor:'#ccf',
+                    padding:'1.62em',
+                    margin:'1.62em 1.62em 2.62em 0',
+                    color:'#336'
+                }
+            }
+        )
+            .attr('id', 'i' + count++)
+            .appendTo('#stage1')
     );
 	
 	 

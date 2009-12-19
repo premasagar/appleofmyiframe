@@ -104,6 +104,13 @@
                 // If a url supplied, add it as the iframe src, to load the page
                 if (isUrl(bodyContents)){
                     attr.src = bodyContents;
+                    
+                    // IE6 repaint - required a) for external iframes that are added to the doc while they are hidden, and b) for some external iframes that are moved in the DOM (e.g. google.co.uk)
+                    this.load(function(){
+                        if (ie6){
+                            this._repaint();
+                        }
+                    });
                 }
                                 
                 // If an injected iframe (i.e. without a document url set as the src)
@@ -123,12 +130,6 @@
                                     .cache()
                                     .load(function(){
                                         this.cache();
-                                                      
-                                        // IE6 repaint hack for external src iframes
-                                        // TODO: Is this needed anymore, now that the hidden div trick isn't in use?
-                                        if (ie6 && this.hasExternalDocument()){
-                                            this._repaint();
-                                        }
                                     });
                             }
                             else {
@@ -142,7 +143,7 @@
                                     .reload();
                             }
                         });
-                }                
+                }
                 
                 // If a callback was supplied, fire it on 'ready'
                 if (callback){
@@ -232,6 +233,11 @@
                     this.$(contents).appendTo(head);
                 }
                 return head;
+            },
+            
+            style : function(cssText){
+                this.head('<style>' + cssText + '</style>');
+                return this;
             },
         
             // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
