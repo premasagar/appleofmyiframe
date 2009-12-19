@@ -43,6 +43,7 @@
     var
         ns = 'aomi',
         win = window,
+        document = win.document,
         msie = $.browser.msie,
         ie6 = (msie && win.parseInt($.browser.version, 10) === 6),
         cssPlain = {
@@ -73,6 +74,7 @@
                         src:'about:blank'
                     },
                     autoresize:true,
+                    target:'_parent',
                     css:$.extend({}, cssPlain)
                 };
                 
@@ -130,6 +132,11 @@
                                     .cache()
                                     .load(function(){
                                         this.cache();
+                                    })
+                                    .live('a', 'click', function(){
+                                        if (!$(this).attr('target')){
+                                            $(this).attr('target', aomi.options.target);
+                                        }
                                     });
                             }
                             else {
@@ -196,6 +203,17 @@
                     aomi.unbind(type, outerCallback);
                 });
             },
+            
+            live: function(selector, type, fn){
+                function liveConvert(type, selector){
+	                return ["live", type, selector.replace(/\./g, "`").replace(/ /g, "|")].join(".");
+                }            
+		        var proxy = $.event.proxy(fn);
+		        proxy.guid += selector + type;         
+		        this.body()
+		            .bind(liveConvert(type, selector), selector, proxy);         
+		        return this;
+	        },
             
             load: function(callback){
                 return this.bind('load', callback);
