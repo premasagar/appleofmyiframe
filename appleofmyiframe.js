@@ -1,7 +1,10 @@
 /*
-    by.Dharmafly() with [
-        premasagar.rose && (jonathan.lister + alistair.james)
-    ];
+    {
+        by:Dharmafly() === [
+            premasagar.rose &&
+                (jonathan.lister + alistair.james)
+        ]
+    };
     license: mit
     url: http://github.com/premasagar/appleofmyiframe
 */
@@ -22,7 +25,7 @@
     function isJQuery(obj){
         return obj && !!obj.jquery;
     }
-    // Copied from jQuery src - required for .live() and .die() methods
+    // From jQuery; required for .live() and .die() methods
     function liveConvert(type, selector){
         return ["live", type, selector.replace(/\./g, "`").replace(/ /g, "|")].join(".");
     }
@@ -47,8 +50,10 @@
     var
         ns = 'aomi',
         win = window,
-        msie = $.browser.msie,
-        ie6 = (msie && win.parseInt($.browser.version, 10) === 6),
+        browser = $.browser,
+        event = $.event,
+        msie = browser.msie,
+        ie6 = (msie && win.parseInt(browser.version, 10) === 6),
         cssPlain = {
             margin:0,
             padding:0,
@@ -130,7 +135,8 @@
                                 this
                                     // Setup event listeners
                                     .bind('contents', this.matchSize)
-                                    .bind('style', this.matchSize)
+                                    .bind('headContents', this.matchSize)
+                                    .bind('bodyContents', this.matchSize)
                                     .load(this.cache)
                                     // Let anchor links open targets in the default target
                                     .live('a', 'click', function(){
@@ -188,18 +194,18 @@
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
             trigger : function(type, data){                
-                // _(this.attr('id') + ': *' + type + '*');
-                $.event.trigger(type + '.' + ns, data, this);
+                 //_(this.attr('id') + ': *' + type + '*');
+                event.trigger(type + '.' + ns, data, this);
                 return this;
             },
             
             bind : function(type, callback){
-                $.event.add(this, type + '.' + ns, callback);
+                event.add(this, type + '.' + ns, callback);
                 return this;
             },
             
             unbind : function(type, callback){
-                $.event.remove(this, type + '.' + ns, callback);
+                event.remove(this, type + '.' + ns, callback);
                 return this;
             },
             
@@ -212,7 +218,7 @@
             },
             
             live: function(selector, type, fn){
-		        var proxy = $.event.proxy(fn);
+		        var proxy = event.proxy(fn);
 		        proxy.guid += selector + type;         
 		        this.body()
 		            .bind(liveConvert(type, selector), selector, proxy);         
@@ -249,12 +255,13 @@
         
             window : function(){
                 var win = this[0].contentWindow;
-                try {
-                    return $(win);
+                if (win){ // For an injected iframe not yet in the DOM, then win is null
+                    try { // For an external iframe, win is accessible, but $(win) will throw a permission denied error
+                        return $(win);
+                    }
+                    catch(e){}
                 }
-                catch(e){
-                    return $([]);
-                }
+                return $([]);
             },
             
             location : function(){
@@ -267,15 +274,41 @@
             document : function(){
                 return $(this.window().attr('document') || []);
             },
-        
+            
             body : function(contents){
                 var body = this.$('body');
-                return contents ? body.append(contents) : body;
+                if (contents){
+                    if (body.length){
+                        body.append(contents);
+                        this.trigger('bodyContents');
+                    }
+                    // Document not active because iframe out of the DOM. Defer till the next 'load' event.
+                    else {
+                        this.one('load', function(){
+                            this.body(contents);
+                        });
+                    }
+                    return this;
+                }
+                return body;
             },
 
             head : function(contents){
-                var head = this.$('head');                            
-                return contents ? head.append(contents) : head;
+                var head = this.$('head');
+                if (contents){
+                    if (head.length){
+                        head.append(contents);
+                        this.trigger('headContents');
+                    }
+                    // Document not active because iframe out of the DOM. Defer till the next 'load' event.
+                    else {
+                        this.one('load', function(){
+                            this.head(contents);
+                        });
+                    }
+                    return this;
+                }
+                return head;
             },
             
             title : function(title){
