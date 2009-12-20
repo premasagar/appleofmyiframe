@@ -239,9 +239,20 @@
                 return this.bind('ready', callback);
             },
             
-            reload : function(){
-                this.attr('src', this.attr('src'));
-                return this.trigger('reload');
+            reload : function(extreme){
+                var newIframe;
+                // A 'soft' reload: re-apply the iframe's src attribute              
+                if (!extreme){
+                    this.attr('src', this.attr('src'));
+                }
+                // A 'hard' reload: re-apply the constructor's arguments
+                else {
+                    $.iframe.apply(this, this._constructorArgs);
+                    newIframe = $.iframe.apply({}, this._constructorArgs);
+                    this.replaceWith(newIframe);
+                    this[0] = newIframe[0];
+                }
+                return this.trigger('reload', !!extreme);
             },
             
             // Trigger a repaint of the iframe - e.g. for external iframes in IE6, where the contents aren't always shown at first
@@ -394,7 +405,7 @@
                             function(){
                                 parentNode.append(
                                     method === 'appendChild' ?
-                                        childNode :
+                                        this :
                                         doc[method](this)
                                 );
                             }
@@ -440,15 +451,15 @@
                     // If we don't yet know the append method to use, then cycle through the different options. This only needs to be determined the first time an iframe is moved in the DOM, and only once per page view.
                     if (!appendMethod) {
                         appendMethod = this._findAppendMethod(doc, methodsToTry, htmlElement, cachedNodes);
-                        $.iframe.appendMethod = appendMethod || 'init';
+                        $.iframe.appendMethod = appendMethod || 'reload';
                     }
                     // If we've already determined the method to use, then use it
-                    else if (appendMethod !== 'init'){
+                    else if (appendMethod !== 'reload'){
                         this._appendWith(doc, appendMethod, htmlElement, cachedNodes);
                     }
                     // If the standard append methods don't work, then resort to re-initializing the iframe
-                    if (appendMethod === 'init'){
-                        this.initialize(); // TODO: This function doesn't yet do what it needs to do
+                    if (appendMethod === 'reload'){
+                        this.reload(true);
                     }
                     this
                         .title(this.options.title)
