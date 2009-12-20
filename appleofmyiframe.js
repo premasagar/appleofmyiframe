@@ -278,7 +278,7 @@
             body : function(contents){
                 var body = this.$('body');
                 if (contents){
-                    if (body.length){
+                    if (body.length){ // TODO: Perhaps this should also check if the 'ready' event has ever fired - e.g. in situations where iframe has just been added to the DOM, but has not yet loaded
                         body.append(contents);
                         this.trigger('bodyContents');
                     }
@@ -351,10 +351,9 @@
                     bodyContents = headContents;
                     headContents = false;
                 }
-                return this
-                    .body(bodyContents)
-                    .head(headContents)
-                    .trigger('contents');
+                this.body(bodyContents);
+                this.head(headContents)
+                return this.trigger('contents');
             },
         
             appendTo : function(obj){
@@ -468,6 +467,7 @@
 	            return this;
             },
             
+            // TODO: Should this first check to see if there is a head and body element already? E.g. in case where iframe is appended to DOM and, before the 'load' & 'ready' events fire, some contents is appended to the head or body - the contents would be overwritten here.
             _prepareDocument : function(){
                 var doc = this.$()[0];
                 if (doc){        
