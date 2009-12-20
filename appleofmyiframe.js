@@ -193,7 +193,7 @@
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
             trigger : function(type, data){
-                _(this.attr('id') + ': *' + type + '*');
+                _(this.attr('id') + ': *' + type + '*', data);
                 
                 event.trigger(type + '.' + ns, data, this);
                 return this;
@@ -387,92 +387,78 @@
                 return !src || src === 'about:blank';
             },
             
-            // If an injected iframe fires the onload event move than once, then its content will be lost, so we need to pull the nodes from  IE doesn't fire onload event more than once.
+            _appendWith : function(doc, method, parentNode, childNodes){
+                if ($.isFunction(doc[method])){
+                    try {
+                        childNodes.each(
+                            function(){
+                                parentNode.append(
+                                    method === 'appendChild' ?
+                                        childNode :
+                                        doc[method](this)
+                                );
+                            }
+                        );
+                        return true;
+                    }
+                    catch(e){}
+                }
+                return false;
+            },
+            
+            _findAppendMethod : function(doc, methods, parentNode, childNodes){
+                var aomi = this, appendMethod;
+                
+                $.each(methods, function(i, method){
+                    if (aomi._appendWith(doc, method, parentNode, childNodes)){
+                        appendMethod = method;
+                        return false;
+                    }
+                });
+                                
+                return appendMethod;
+            },
+            
             cache : function(){
 	            var
 	                doc = this.$()[0],
-	                htmlElement, oldHtmlElement, oldHead, oldBody, method, appendWith;
+	                // Check if there's already cached head and body elements
+	                cachedNodes = this._cachedNodes,
+	                appendMethod, methodsToTry, htmlElement;
 	                
-	            if (!doc){
+	            if (!doc){ // iframe is not in the DOM
 	                return this;
 	            }
-	            htmlElement = this.$('html');
-	            // Check if there's already a cached htmlElement, from the last time the iframe loaded
-	            oldHtmlElement = this._oldHtmlElement;	                
-	                
+	            
                 // This will run each time the iframe reloads, except for the very first time the iframe is inserted
-	            if (oldHtmlElement){
-		            oldHead = oldHtmlElement.find('head');
-		            oldBody = oldHtmlElement.find('body');
-		            htmlElement.empty();
-		            
-		            // Re-usable append function, for trying different DOM methods            
-		            appendWith = function(method){
-                        function appendNode(node){
-                            htmlElement.append(
-                                method === 'appendChild' ?
-                                    node :
-                                    doc[method](node, true)
-                            );
-                        }
-                        if (method !== 'init'){
-                            // NOTE: even if oldHead or oldBody are null, or the adoptNode fails, this should never error
-                            appendNode(oldHead[0]);
-                            appendNode(oldBody[0]);
-                        }
-                        else { // TODO: This aspect of initialize(), where the constructor args are cached, is not yet implemented
-                            this.initialize();
-                        }
-                        return method;
-                    };
+	            if (cachedNodes){
+                    // Methods to try, in order. If all fail, then the iframe will re-initialize.
+                    methodsToTry = ['adoptNode', 'appendChild', 'importNode', 'cloneNode'];
+                    appendMethod = $.iframe.appendMethod;
+		            htmlElement = this.$('html').empty();
                     
+                    // If we don't yet know the append method to use, then cycle through the different options. This only needs to be determined the first time an iframe is moved in the DOM, and only once per page view.
+                    if (!appendMethod) {
+                        appendMethod = this._findAppendMethod(doc, methodsToTry, htmlElement, cachedNodes);
+                        $.iframe.appendMethod = appendMethod || 'init';
+                    }
                     // If we've already determined the method to use, then use it
-                    if (method){
-                        appendWith(method);
+                    else if (appendMethod !== 'init'){
+                        this._appendWith(doc, appendMethod, htmlElement, cachedNodes);
                     }
-                    // If not, then cycle through the different options
-                    else {
-                        // #1: adoptNode
-                        if (doc.adoptNode){
-                            method = appendWith('adoptNode');
-                        }
-                        else {
-                            // #2: appendChild 
-                            // append nodes straight from the other document; technically against the DOM spec, but supported by FF2 et al
-                            try {
-                                method = appendWith('appendChild');
-                            }
-                            catch(e){
-                                // #3: importNode
-                                // this and remaining steps will clone the nodes, so any references to nodes will be broken
-                                if (doc.importNode){
-                                    method = appendWith('importNode');
-                                }
-                                else {
-                                    // #4: cloneNode
-                                    // if 2) appendChild didn't work, then this probably won't either
-                                    try {
-                                        method = appendWith('cloneNode');
-                                    }
-                                    catch(e2){
-                                        // #5: re-initialize iframe
-                                        method = appendWith('init');
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // TODO: Fix incomplete images in WebKit. The problem: when a document is dropped while images in the document are still loading, then when the nodes are copied over to the new document, the image does not continue to load, and remains blank. The solution: a method that re-applies the src attribute of images, after adding them to the new document. Possibly check the image's 'complete' property, and only if it is not complete, then re-apply the src attribute. Need to verify if there is a performance impact of re-applying the src of an image that has already been cached.
-                        
-                        // The append method will be stored as a property of the $.iframe method. T, so it only needs to run once on the first iframe, to determine the best method to use.
-                        $.iframe.appendMethod = method;
-                        this
-                            .title(this.options.title)
-                            .trigger('restore', method);
+                    // If the standard append methods don't work, then resort to re-initializing the iframe
+                    if (appendMethod === 'init'){
+                        this.initialize(); // TODO: This function doesn't yet do what it needs to do
                     }
+                    this
+                        .title(this.options.title)
+                        .trigger('restore', appendMethod);
 	            }
-	            // Update the cached htmlElement with the new one
-	            this._oldHtmlElement = htmlElement;
+	            
+                // TODO: Fix incomplete images in WebKit. The problem: when a document is dropped while images in the document are still loading, then when the nodes are copied over to the new document, the image does not continue to load, and remains blank. The solution: a method that re-applies the src attribute of images, after adding them to the new document. Possibly check the image's 'complete' property, and only if it is not complete, then re-apply the src attribute. Need to verify if there is a performance impact of re-applying the src of an image that has already been cached.
+	            
+	            // Update the cached nodes
+	            this._cachedNodes = this.head().add(this.body());
 	            this.trigger('cache');
 	            return this;
             },
