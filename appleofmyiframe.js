@@ -192,8 +192,9 @@
             },
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
-            trigger : function(type, data){                
-                 //_(this.attr('id') + ': *' + type + '*');
+            trigger : function(type, data){
+                _(this.attr('id') + ': *' + type + '*');
+                
                 event.trigger(type + '.' + ns, data, this);
                 return this;
             },
@@ -366,8 +367,7 @@
                 if (ie6 && this.hasExternalDocument()){
                     this.repaint();
                 }
-                this.trigger('appendTo');
-                return this;
+                return this.trigger('appendTo');
             },
             
             // TODO: Currently, this will return true for an iframe that has a cross-domain src attribute and is not yet in the DOM. We should include a check to compare the domain of the host window with the domain of the iframe window - including checking document.domain property

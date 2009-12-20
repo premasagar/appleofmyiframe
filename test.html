@@ -10,7 +10,7 @@
   <script src="appleofmyiframe.js"></script>
   <style>
     button {
-        font-size:1.6em;
+        font-size:1.38em;
         padding:0.16em;
         display:block;
         margin:0 0.38em 0.38em 0;
@@ -23,17 +23,17 @@
         top:0;
         left:0;
     }
-    #tests, #browser, #append-method {
+    #tests, #reports {
         float:left;
         margin:0 6.85em 2.62em 0;
         padding-bottom:2.62em;
         border-bottom:1px solid #ccc;
     }
-    #append-method {
-        display:none;
-    }
     #tests .desc {
-        font-size:1.6em;
+        font-size:1.38em;
+    }
+    #reports dt {
+        margin-top:1em;
     }
     .stage {
         float:left;
@@ -65,7 +65,7 @@
   <h1>AppleOfMyIframe</h1>
   
   <div id="tests">
-      <h2>Tests</h2>  
+      <h2>Tests</h2>
       <p class="desc">Do the iframes and their contents stay intact throughout?</p>
       <div id="controls">
         <ol>
@@ -79,14 +79,15 @@
       </div>
   </div>
   
-  <div id="append-method" class="report">
-    <h2>Append method</h2>
-    <p class="report"></p>
-  </div>
-  
-  <div id="browser" class="report">
-    <h2>Your browser</h2>
-    <textarea class="user-agent" rows="3" cols="42"></textarea>
+  <div id="reports">
+    <h2>Reports</h2>
+    <dl>
+        <dt>Browser</dt>
+        <dd id="browser"><textarea class="user-agent" rows="3" cols="42"></textarea></dd>
+    
+        <dt>Append method:</dt>
+        <dd id="append-method"></dd>
+    </dl>
   </div>
   
   <div id="stage1" class="stage">
@@ -173,26 +174,22 @@
         });
     });
 
-/*
+
     // Determine appendMethod
     var stealth = $('<div></div>')
         .addClass('stealth')
         .appendTo('body');
     var iHidden = $.iframe('<p>blah</p>', {attr:{id:'iHidden'}})
         .one('restore', function(ev, appendMethod){
-            $('#append-method')
-                .show()
-                .find('.report')
-                    .text(appendMethod);
+            $('#append-method').text(appendMethod);
             stealth.remove();
             delete stealth;
             delete iHidden;
         })
-        .load(function(){
+        .ready(function(){
             this.appendTo(stealth);
         })
         .appendTo(stealth);
- */
         
   
     $('button#move-iframes')
