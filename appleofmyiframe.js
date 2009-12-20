@@ -9,8 +9,7 @@
     url: http://github.com/premasagar/appleofmyiframe
 */
 
-// TODO: Possible loading flow: pass 'ready' callback to _onload(), then in the 'ready' handler, trigger 'load' and pass 'load' callback to _onload().
-// TODO: Coding style: Standardise use of leading '$' for variables referring to jQuery collections - e.g. var $body = $('body'); - or simply avoid altogether
+// TODO: Possible loading flow: pass 'ready' callback to _onload(), then in the 'ready' handler, trigger 'load' and pass 'load' callback to _onload()
 
 'use strict';
 
@@ -96,7 +95,7 @@
                         optionsFound = true;
                         $.extend(true, aomi.options, arg);
                     }
-                    // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers. Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
+                    // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers? Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
                     else if (!bodyContents && typeof arg !== 'undefined'){
                         bodyContents = arg;
                     }
@@ -170,8 +169,8 @@
                 }
                 
                 return this
-                    // Absorb the iframe - this needs to be executed before any native onload handlers are applied to the iframe element
-                    ._absorbIframe(this.options)                                
+                    // Absorb the iframe element
+                    ._absorbElement(this.options)                                
                     // Pin the 'load' event to the iframe element's native 'onload' event
                     ._onload(function(){
                         this.trigger('load');
@@ -180,7 +179,7 @@
                     .trigger('init');
             },
             
-            _absorbIframe : function(options){
+            _absorbElement : function(options){
                 $.fn.init.call(this, '<iframe></iframe>')
                     .css(options.css)
                     .attr(options.attr);
@@ -246,15 +245,16 @@
             
             // Trigger a repaint of the iframe - e.g. for external iframes in IE6, where the contents aren't always shown at first
             repaint : function(){
-                var className = ns + '-repaint';
-                this
-                    .addClass(className)
-                    .removeClass(className);
+                this.toggleClass(ns + '-repaint');
                 return this.trigger('repaint');
+            },
+            
+            _windowObj : function(){
+                return this[0].contentWindow;
             },
         
             window : function(){
-                var win = this[0].contentWindow;
+                var win = this._windowObj();
                 if (win){ // For an injected iframe not yet in the DOM, then win is null
                     try { // For an external iframe, win is accessible, but $(win) will throw a permission denied error
                         return $(win);
@@ -268,7 +268,13 @@
                 var
                     win = this.window(),
                     loc = win.attr('location');
-                return loc ? loc.href : null;
+                
+                return loc ?
+                    loc.href : ( // location href is available, so iframe is in the DOM and is in the same domain
+                        this._windowObj() ?
+                            null : // iframe is in the DOM, but has a cross-domain document
+                            this.attr('src') // iframe is out of the DOM, so its window doesn't exist and it has no location, return iframe element src
+                    );
             },
         
             document : function(){
@@ -321,9 +327,7 @@
             },
             
             style : function(cssText){
-                return this
-                    .head('<style>' + cssText + '</style>')
-                    .trigger('style');
+                return this.head('<style>' + cssText + '</style>');
             },
         
             // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
@@ -352,24 +356,30 @@
                     headContents = false;
                 }
                 this.body(bodyContents);
-                this.head(headContents)
+                this.head(headContents);
                 return this.trigger('contents');
             },
         
             appendTo : function(obj){
                 $.fn.appendTo.call(this, obj);
-                if (ie6){
+                // TODO: If we group together manipulation events, the repaint call can be passed as an event listener to those manip events.
+                if (ie6 && this.hasExternalDocument()){
                     this.repaint();
                 }
                 this.trigger('appendTo');
                 return this;
             },
             
-            // TODO: Useful method to add: hasCrossDomainDocument(), as opposed to a document served from the same domain
+            // TODO: Currently, this will return true for an iframe that has a cross-domain src attribute and is not yet in the DOM. We should include a check to compare the domain of the host window with the domain of the iframe window - including checking document.domain property
+            isSameDomain : function(){
+                return this.location() !== null;
+            },
+            
             hasExternalDocument : function(){
                 var loc = this.location();
-                return !loc || (loc !== 'about:blank' && loc !== win.location.href);
+                return loc === null || (loc !== 'about:blank' && loc !== win.location.href);
                 // NOTE: the comparison with the host window href is because, in WebKit, an injected iframe may have a location set to that url. This would also match an iframe that has a src matching the host document url, though this seems unlikely to take place in practice.
+                // NOTE: this also returns true when the iframe src attribute is for an external document, but the iframe is out of the DOM and so doesn't actually contain a document at that time
             },
             
             hasBlankSrc : function(){
