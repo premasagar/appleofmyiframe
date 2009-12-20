@@ -232,11 +232,11 @@
             '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color.</p>',
             function(){
                 this
-                    .css({padding:'2.62em'})
-                    .style('p {background-color:#336; color:#ccf; font-size:1.6em;}');
+                    .css({padding:'2.62em'});
             }
         )
             .attr('id', 'i' + count++)
+            .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
             .appendTo('#stage1'),
             
         
