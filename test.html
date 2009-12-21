@@ -115,10 +115,13 @@
 	        return (opera && opera.postError) ?
                  function(){
                      var i, argLen, log = opera.postError, args = arguments;
+                     log(args);
+                     /*
                      argLen = args.length;
 		             for (i=0; i < argLen; i++){
 			             log(args[i]);
 		             }
+		             */
                  } :
                  function(){};
 	    }
@@ -158,6 +161,19 @@
     // AOMI TESTS
   
 (function(){
+     // Guard against infinite loops by adding halt time (hours:mins) as a query string, e.g. ?timesUp=22:05
+    (function(){
+        var
+            timesUp = window.location.search.replace('?timesUp=', ''),
+            now = new Date();
+        if (timesUp){
+            timesUp = timesUp.split(':');
+            if (now > new Date(now.getFullYear(), now.getMonth(), now.getDate(), timesUp[0], timesUp[1])){
+                throw "Time's up!";
+            }
+        }
+    })();
+
     var
         win = window,
         iframes = win.i = [],
@@ -180,16 +196,21 @@
         .addClass('stealth')
         .appendTo('body');
     var iHidden = $.iframe('<p>blah</p>', {attr:{id:'iHidden'}})
+        .ready(function(){
+            this.appendTo(stealth);
+        })
         .one('restore', function(ev, appendMethod){
             $('#append-method').text(appendMethod);
             stealth.remove();
             delete stealth;
             delete iHidden;
         })
-        .ready(function(){
-            this.appendTo(stealth);
-        })
         .appendTo(stealth);
+    window.setTimeout(function(){
+        if (!$('#append-method').text()){
+            $('#append-method').text("None required");
+        }
+    }, 1500);
         
   
     $('button#move-iframes')
@@ -210,7 +231,7 @@
         .click(function(){
             window.location.href = window.location.href;
         });
-
+        
     
     window.i.push(
         // External src iframes
@@ -230,19 +251,16 @@
             function(){
                 this
                     .css({padding:'2.62em'})
-                    .attr('id', 'i' + count++)
                     .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
             }
         )
+            .attr('id', 'i' + count++)
             .appendTo('#stage1'),
             
         
         $.iframe(
             '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\' document contents.</p>',
             {
-                attr:{
-                    id:'i' + count++
-                },
                 css:{
                     backgroundColor:'#ccf',
                     padding:'2.62em',
@@ -251,6 +269,7 @@
                 }
             }
         )
+            .attr('id', 'i' + count++)
             .appendTo('#stage1')
     );
 	

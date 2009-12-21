@@ -1,19 +1,36 @@
-/*
-    {
-        by:Dharmafly() === [
-            premasagar.rose &&
-                (jonathan.lister + alistair.james)
-        ]
-    };
-    license: mit
-    url: http://github.com/premasagar/appleofmyiframe
-*/
+/*!
+* AppleOfMyIframe
+*     v0.9
+**
+    jQuery plugin for creating & manipulating iframe documents on-the-fly
+    http://github.com/premasagar/appleofmyiframe
+    
+    by Premasagar Rose
+        http://premasagar.com + http://dharmafly.com
+    
+    license:
+        http://www.opensource.org/licenses/mit-license.php
+    
+    *//*
+ 
+    adds jQuery methods:
+        jQuery.iframe()
+        jQuery(elem).intoIframe()
+        
+    **
+    
+    contributors:
+        Alastair James - http://worldreviewer.com
+        Jonathan Lister - http://jaybyjayfresh.com
+    
+    
+    ~2KB minified & gzipped
 
-// TODO: Possible loading flow: pass 'ready' callback to _onload(), then in the 'ready' handler, trigger 'load' and pass 'load' callback to _onload()
+*/
 
 'use strict';
 
-(function($){ 
+(function($){
 
     function isUrl(str){
         return (/^https?:\/\/[\-\w]+\.\w[\-\w]+\S*$/).test(str);
@@ -28,7 +45,7 @@
     function liveConvert(type, selector){
         return ["live", type, selector.replace(/\./g, "`").replace(/ /g, "|")].join(".");
     }
-
+    
     // Utility class to create jquery extension class easily
     // Mixin the passed argument with a clone of the jQuery prototype
     function JqueryClass(proto){
@@ -47,12 +64,29 @@
 
 
     var
+        // Namespace
         ns = 'aomi',
+        
+        // Environment
         win = window,
         browser = $.browser,
-        event = $.event,
         msie = browser.msie,
         ie6 = (msie && win.parseInt(browser.version, 10) === 6),
+        opera = browser.opera,
+        browserNeedsDocumentPreparing = (function(){
+            return !msie && !opera;
+        }()),
+        browserDestroysDocumentWhenIframeMoved = (function(){
+            return !msie;
+        }()),
+        browserRequiresRepaintForExternalIframes = (function(){
+            return ie6;
+        }()),
+        
+        // Shortcuts
+        event = $.event,
+        
+        // Settings
         cssPlain = {
             margin:0,
             padding:0,
@@ -61,6 +95,7 @@
             backgroundColor:'transparent'
         },
         
+        // Main class
         AppleOfMyIframe = new JqueryClass({
             initialize : function(){
                 var
@@ -115,7 +150,7 @@
                     attr.src = bodyContents;
                     
                     // IE6 repaint - required a) for external iframes that are added to the doc while they are hidden, and b) for some external iframes that are moved in the DOM (e.g. google.co.uk)
-                    if (ie6){
+                    if (browserRequiresRepaintForExternalIframes()){
                         this.ready(this.repaint);
                     }
                 }
@@ -125,7 +160,7 @@
                     this
                         // When the iframe is ready, prepare the document and its contents
                         .ready(function(){            
-                            if (!msie){
+                            if (browserNeedsDocumentPreparing()){
                                 this._prepareDocument();
                             }
                             // Check if the iframe is all OK to continue loading (e.g. guarding against browser bugs with external src leakage)
@@ -138,20 +173,24 @@
                                         // TODO: How should this be simplified, so that a call to contents() doesn't lead to two calls to matchSize()?
                                 }                            
                                 this
-                                    // Setup other event listeners
-                                    .load(this.cache)
-                                    // Let anchor links open targets in the default target
+                                    // Let anchor links open pages in the default target
                                     .live('a', 'click', function(){
                                         if (!$(this).attr('target') && $(this).attr('href')){
                                             $(this).attr('target', aomi.options.target);
                                         }
                                     })
-                                    // Change contents
+                                    // Change head and body contents
                                     ._trim()
                                     .title(this.options.title)
-                                    .contents(headContents, bodyContents)
-                                    // Iframe document persistance: Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
-                                    .cache();
+                                    .contents(headContents, bodyContents);
+                                
+                                // Iframe document persistance:
+                                // Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
+                                if (browserDestroysDocumentWhenIframeMoved()){
+                                    this
+                                        .load(this.cache)
+                                        .cache();
+                                }
                             }
                             else {
                                 // There's a problem with the iframe. Reload.
@@ -175,18 +214,12 @@
                     // Absorb the iframe element
                     ._absorbElement(this.options)                                
                     // Pin the 'load' event to the iframe element's native 'onload' event
+                    // TODO: Possible loading flow: pass 'ready' callback to _onload(), then in the 'ready' handler, trigger 'load' and pass 'load' callback to _onload()
                     ._onload(function(){
                         this.trigger('load');
                     })
                     // Init complete
                     .trigger('init');
-            },
-            
-            _absorbElement : function(options){
-                $.fn.init.call(this, '<iframe></iframe>')
-                    .css(options.css)
-                    .attr(options.attr);
-                return this;
             },
         
             $ : function(arg){
@@ -196,8 +229,7 @@
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
             trigger : function(type, data){
-                _(this.attr('id') + ': *' + type + '*', data);
-                
+                //_(this.attr('id') + ': *' + type + '*', data);                
                 event.trigger(type + '.' + ns, data, this);
                 return this;
             },
@@ -262,10 +294,6 @@
             repaint : function(){
                 this.toggleClass(ns + '-repaint');
                 return this.trigger('repaint');
-            },
-            
-            _windowObj : function(){
-                return this[0].contentWindow;
             },
         
             window : function(){
@@ -375,10 +403,11 @@
                 return this.trigger('contents');
             },
         
+            // TODO: Add similar methods - e.g. prependTo, replaceWith
             appendTo : function(obj){
                 $.fn.appendTo.call(this, obj);
                 // TODO: If we group together manipulation events, the repaint call can be passed as an event listener to those manip events.
-                if (ie6 && this.hasExternalDocument()){
+                if (browserRequiresRepaintForExternalIframes() && this.hasExternalDocument()){
                     this.repaint();
                 }
                 return this.trigger('appendTo');
@@ -399,6 +428,61 @@
             hasBlankSrc : function(){
                 var src = this.attr('src');
                 return !src || src === 'about:blank';
+            },
+            
+            cache : function(){
+	            var
+	                doc = this.$()[0],
+	                // Check if there's already cached head and body elements
+	                cachedNodes = this._cachedNodes,
+	                appendMethod, methodsToTry, htmlElement;
+	                
+	            if (!doc){ // iframe is not in the DOM
+	                return this;
+	            }
+	            
+                // This will run each time the iframe reloads, except for the very first time the iframe is inserted
+	            if (cachedNodes){
+                    // Methods to try, in order. If all fail, then the iframe will re-initialize.
+                    methodsToTry = ['adoptNode', 'appendChild', 'importNode', 'cloneNode'];
+                    appendMethod = $.iframe.appendMethod;
+		            htmlElement = this.$('html').empty();
+                    
+                    // If we don't yet know the append method to use, then cycle through the different options. This only needs to be determined the first time an iframe is moved in the DOM, and only once per page view.
+                    if (!appendMethod) {
+                        appendMethod = this._findAppendMethod(doc, methodsToTry, htmlElement, cachedNodes) || 'reload';
+                        $.iframe.appendMethod = appendMethod;
+                    }
+                    // If we've already determined the method to use, then use it
+                    else if (appendMethod !== 'reload'){
+                        this._appendWith(doc, appendMethod, htmlElement, cachedNodes);
+                    }
+                    // If the standard append methods don't work, then resort to re-initializing the iframe
+                    if (appendMethod === 'reload'){
+                        this.reload(true);
+                    }
+                    this
+                        .title(this.options.title)
+                        .trigger('restore', appendMethod);
+	            }
+	            
+                // TODO: Fix incomplete images in WebKit. The problem: when a document is dropped while images in the document are still loading, then when the nodes are copied over to the new document, the image does not continue to load, and remains blank. The solution: a method that re-applies the src attribute of images, after adding them to the new document. Possibly check the image's 'complete' property, and only if it is not complete, then re-apply the src attribute. Need to verify if there is a performance impact of re-applying the src of an image that has already been cached.
+	            
+	            // Update the cached nodes
+	            this._cachedNodes = this.head().add(this.body());
+	            this.trigger('cache');
+	            return this;
+            },
+            
+            _absorbElement : function(options){
+                $.fn.init.call(this, '<iframe></iframe>')
+                    .css(options.css)
+                    .attr(options.attr);
+                return this;
+            },
+            
+            _windowObj : function(){
+                return this[0].contentWindow;
             },
             
             _appendWith : function(doc, method, parentNode, childNodes){
@@ -431,51 +515,6 @@
                 });
                                 
                 return appendMethod;
-            },
-            
-            cache : function(){
-	            var
-	                doc = this.$()[0],
-	                // Check if there's already cached head and body elements
-	                cachedNodes = this._cachedNodes,
-	                appendMethod, methodsToTry, htmlElement;
-	                
-	            if (!doc){ // iframe is not in the DOM
-	                return this;
-	            }
-	            
-                // This will run each time the iframe reloads, except for the very first time the iframe is inserted
-	            if (cachedNodes){
-                    // Methods to try, in order. If all fail, then the iframe will re-initialize.
-                    methodsToTry = ['adoptNode', 'appendChild', 'importNode', 'cloneNode'];
-                    appendMethod = $.iframe.appendMethod;
-		            htmlElement = this.$('html').empty();
-                    
-                    // If we don't yet know the append method to use, then cycle through the different options. This only needs to be determined the first time an iframe is moved in the DOM, and only once per page view.
-                    if (!appendMethod) {
-                        appendMethod = this._findAppendMethod(doc, methodsToTry, htmlElement, cachedNodes);
-                        $.iframe.appendMethod = appendMethod || 'reload';
-                    }
-                    // If we've already determined the method to use, then use it
-                    else if (appendMethod !== 'reload'){
-                        this._appendWith(doc, appendMethod, htmlElement, cachedNodes);
-                    }
-                    // If the standard append methods don't work, then resort to re-initializing the iframe
-                    if (appendMethod === 'reload'){
-                        this.reload(true);
-                    }
-                        _('appendMethod: ' + appendMethod);
-                    this
-                        .title(this.options.title)
-                        .trigger('restore', appendMethod);
-	            }
-	            
-                // TODO: Fix incomplete images in WebKit. The problem: when a document is dropped while images in the document are still loading, then when the nodes are copied over to the new document, the image does not continue to load, and remains blank. The solution: a method that re-applies the src attribute of images, after adding them to the new document. Possibly check the image's 'complete' property, and only if it is not complete, then re-apply the src attribute. Need to verify if there is a performance impact of re-applying the src of an image that has already been cached.
-	            
-	            // Update the cached nodes
-	            this._cachedNodes = this.head().add(this.body());
-	            this.trigger('cache');
-	            return this;
             },
             
             // TODO: Should this first check to see if there is a head and body element already? E.g. in case where iframe is appended to DOM and, before the 'load' & 'ready' events fire, some contents is appended to the head or body - the contents would be overwritten here.
@@ -511,7 +550,7 @@
             _onload : function(callback){
                 var
                     aomi = this,
-                    iframe = this[0],                    
+                    iframe = this[0],
                     onload = function(){
                         callback.call(aomi);
                     };
@@ -519,15 +558,16 @@
                 // W3C
                 iframe.onload = onload;
                 
-                // IE (+ Opera?)
-                if (iframe.attachEvent){
+                // IE & Opera
+                if (!iframe.onload && iframe.attachEvent){
                     iframe.attachEvent('onload', onload);
                 }
                 return this;
             }
         });
+        
     
-    // Extend jquery with the iframe method
+    // Extend jQuery with jQuery.iframe() and jQuery(elem).intoIframe()
     $.extend(
         true,
         {
