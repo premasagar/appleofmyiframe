@@ -110,7 +110,6 @@
                 this.one('load', function(){
                     this.trigger('ready');
                 });
-                
                 // If a url supplied, add it as the iframe src, to load the page
                 if (isUrl(bodyContents)){
                     attr.src = bodyContents;
@@ -131,11 +130,15 @@
                             }
                             // Check if the iframe is all OK to continue loading (e.g. guarding against browser bugs with external src leakage)
                             if (this._okToLoad()){
+                                // Setup auto-resize event listeners
+                                if (this.options.autoresize){
+                                    this
+                                        .bind('headContents', this.matchSize)
+                                        .bind('bodyContents', this.matchSize);
+                                        // TODO: How should this be simplified, so that a call to contents() doesn't lead to two calls to matchSize()?
+                                }                            
                                 this
-                                    // Setup event listeners
-                                    .bind('contents', this.matchSize)
-                                    .bind('headContents', this.matchSize)
-                                    .bind('bodyContents', this.matchSize)
+                                    // Setup other event listeners
                                     .load(this.cache)
                                     // Let anchor links open targets in the default target
                                     .live('a', 'click', function(){
@@ -461,6 +464,7 @@
                     if (appendMethod === 'reload'){
                         this.reload(true);
                     }
+                        _('appendMethod: ' + appendMethod);
                     this
                         .title(this.options.title)
                         .trigger('restore', appendMethod);
