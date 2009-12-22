@@ -159,7 +159,7 @@
                 else if (bodyContents || headContents){
                     this
                         // When the iframe is ready, prepare the document and its contents
-                        .ready(function(){            
+                        .ready(function(){
                             if (browserNeedsDocumentPreparing){
                                 this._prepareDocument();
                             }
@@ -207,7 +207,11 @@
                 
                 // If a callback was supplied, fire it on 'ready'
                 if (callback){
-                    this.ready(callback);
+                    this.ready(function(){
+                        callback.call(this);
+                    });
+                    // NOTE: This block used to read "this.ready(callback);", which should be identical. However, WebKit (seen in Chrome 4) doesn't successfully apply manipulations to the iframe head on a reload(true) when the block reads that way. Why? Who knows?
+                    // TODO: Investigate this. Perhaps the bind/unbind/trigger events need changing instead?
                 }
                 
                 return this
@@ -275,7 +279,7 @@
             },
             
             reload : function(extreme){
-                var newIframe;
+                var newIframe, oldAttr;
                 // A 'soft' reload: re-apply the iframe's src attribute              
                 if (!extreme){
                     this.attr('src', this.attr('src'));
@@ -284,8 +288,14 @@
                 else {
                     $.iframe.apply(this, this._constructorArgs);
                     newIframe = $.iframe.apply({}, this._constructorArgs);
+                    oldAttr = {
+                        className: this.attr('class'),
+                        id: this.attr('id'),
+                        style: this.attr('style')
+                    };
                     this.replaceWith(newIframe);
                     this[0] = newIframe[0];
+                    this.attr(oldAttr);
                 }
                 return this.trigger('reload', !!extreme);
             },

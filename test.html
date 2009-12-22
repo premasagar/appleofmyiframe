@@ -69,12 +69,11 @@
       <p class="desc">Do the iframes and their contents stay intact throughout?</p>
       <div id="controls">
         <ol>
-            <li>
-                <button id="move-iframes">Move iframes to a new DOM node</button>
-            </li>
-            <li>
-                <button id="reload-page">Reload host window</button>
-            </li>
+            <li><button id="move-iframes">Move iframes to a new DOM node</button></li>
+            <li><button id="reload-page">Reload host window</button></li>
+            <li><button id="repaint-iframes">Repaint iframes</button>
+            <li><button id="reload-iframes">Reload iframes</button>
+            <li><button id="reload-iframes-extreme">Reload iframes (extreme)</button>
         </ol>
       </div>
   </div>
@@ -170,7 +169,7 @@
     // ****************************************
     
     // AOMI TESTS
-  
+
 (function(){
      // Guard against infinite loops by adding halt time (hours:mins) as a query string, e.g. ?timesUp=22:05
     (function(){
@@ -228,11 +227,13 @@
         .toggle(
             function(){
                 $.each(window.i, function(){
+                    _('*moving iframe*: ' + this.attr('id'));
                     this.appendTo('#stage2');
                 });
             },
             function(){
                 $.each(window.i, function(){
+                    _('*moving iframe*: ' + this.attr('id'));
                     this.appendTo('#stage1');
                 });
             }
@@ -241,6 +242,33 @@
     $('button#reload-page')
         .click(function(){
             window.location.href = window.location.href;
+        });
+        
+    $('button#repaint-iframes')
+        .click(function(){
+            $.each(window.i, function(){
+                _('*repaint start*: ' + this.attr('id'));
+                this.repaint();
+                _('*reload end*: ' + this.attr('id'));
+            });
+        });
+        
+    $('button#reload-iframes')
+        .click(function(){
+            $.each(window.i, function(){
+                _('*reload start*: ' + this.attr('id'));
+                this.reload();
+                _('*reload end*: ' + this.attr('id'));
+            });
+        });
+        
+    $('button#reload-iframes-extreme')
+        .click(function(){
+            $.each(window.i, function(){
+                _('*reload start*: ' + this.attr('id'));
+                this.reload(true);
+                _('*reload end*: ' + this.attr('id'));
+            });
         });
         
     
@@ -262,7 +290,7 @@
             function(){
                 this
                     .css({padding:'2.62em'})
-                    .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
+                    .style('p {background-color:#336; color:#ccf; font-size:1.6em;}');
             }
         )
             .attr('id', 'i' + count++)
