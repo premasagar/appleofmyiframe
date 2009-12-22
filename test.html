@@ -114,14 +114,25 @@
 	        // Opera 
 	        return (opera && opera.postError) ?
                  function(){
-                     var i, argLen, log = opera.postError, args = arguments;
+                     var i, argLen, log = opera.postError, args = arguments, arg, subArgs;
                      log(args);
-                     /*
+                     
                      argLen = args.length;
 		             for (i=0; i < argLen; i++){
-			             log(args[i]);
+		                 arg = args[i];
+		                 if (typeof arg === 'object' && arg !== null){
+		                    subArgs = [];
+		                    for (prop in arg){
+		                        try {
+		                            if (arg.hasOwnProperty(prop)){
+		                                subArgs.push(prop + ': ' + arg[prop]);
+		                            }
+		                        }
+		                        catch(e){}
+		                    }
+		                    log('----subArgs: ' + subArgs);
+		                 }
 		             }
-		             */
                  } :
                  function(){};
 	    }

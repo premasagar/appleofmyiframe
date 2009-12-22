@@ -2,25 +2,26 @@
 * AppleOfMyIframe
 *     v0.9
 **
-    jQuery plugin for creating & manipulating iframe documents on-the-fly
+    JavaScript library for creating & manipulating iframe documents on-the-fly
     http://github.com/premasagar/appleofmyiframe
-    
+
     by Premasagar Rose
         http://premasagar.com + http://dharmafly.com
-    
+
     license:
         http://www.opensource.org/licenses/mit-license.php
-    
-    *//*
- 
-    adds jQuery methods:
+
+*//*
+
+    requires jQuery
+    adds methods:
         jQuery.iframe()
         jQuery(elem).intoIframe()
         
     **
     
     contributors:
-        Alastair James - http://worldreviewer.com
+        Alastair James - http://github.com/onewheelgood
         Jonathan Lister - http://jaybyjayfresh.com
     
     
@@ -44,8 +45,7 @@
     // From jQuery; required for .live() and .die() methods
     function liveConvert(type, selector){
         return ["live", type, selector.replace(/\./g, "`").replace(/ /g, "|")].join(".");
-    }
-    
+    }    
     // Utility class to create jquery extension class easily
     // Mixin the passed argument with a clone of the jQuery prototype
     function JqueryClass(proto){
@@ -490,11 +490,20 @@
                     try {
                         childNodes.each(
                             function(){
-                                parentNode.append(
-                                    method === 'appendChild' ?
-                                        this :
-                                        doc[method](this)
-                                );
+                                var newNode;
+                                switch (method){
+                                    case 'cloneNode':
+                                    newNode = this[method](true);
+                                    break;
+                                    
+                                    case 'appendChild':
+                                    newNode = this;
+                                    break;
+                                    
+                                    default: // adoptNode & importNode
+                                    newNode = doc[method](this, true);
+                                }
+                                parentNode.append(newNode);
                             }
                         );
                         return true;
