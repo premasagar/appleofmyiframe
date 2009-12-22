@@ -150,7 +150,7 @@
                     attr.src = bodyContents;
                     
                     // IE6 repaint - required a) for external iframes that are added to the doc while they are hidden, and b) for some external iframes that are moved in the DOM (e.g. google.co.uk)
-                    if (browserRequiresRepaintForExternalIframes()){
+                    if (browserRequiresRepaintForExternalIframes){
                         this.ready(this.repaint);
                     }
                 }
@@ -160,7 +160,7 @@
                     this
                         // When the iframe is ready, prepare the document and its contents
                         .ready(function(){            
-                            if (browserNeedsDocumentPreparing()){
+                            if (browserNeedsDocumentPreparing){
                                 this._prepareDocument();
                             }
                             // Check if the iframe is all OK to continue loading (e.g. guarding against browser bugs with external src leakage)
@@ -186,7 +186,7 @@
                                 
                                 // Iframe document persistance:
                                 // Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
-                                if (browserDestroysDocumentWhenIframeMoved()){
+                                if (browserDestroysDocumentWhenIframeMoved){
                                     this
                                         .load(this.cache)
                                         .cache();
@@ -407,7 +407,7 @@
             appendTo : function(obj){
                 $.fn.appendTo.call(this, obj);
                 // TODO: If we group together manipulation events, the repaint call can be passed as an event listener to those manip events.
-                if (browserRequiresRepaintForExternalIframes() && this.hasExternalDocument()){
+                if (browserRequiresRepaintForExternalIframes && this.hasExternalDocument()){
                     this.repaint();
                 }
                 return this.trigger('appendTo');
