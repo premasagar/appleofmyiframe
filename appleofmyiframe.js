@@ -115,6 +115,7 @@
                         allowTransparency:true,
                         src:'about:blank'
                     },
+                    doctype: '<!DOCTYPE html>',
                     autoresize:true,
                     target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
                     css:$.extend({}, cssPlain),
@@ -141,10 +142,6 @@
                 });
                 attr = this.options.attr;
                 
-                // Setup the 'ready' event to trigger the first time an iframe loads. This must be set before any other 'load' callbacks.
-                this.one('load', function(){
-                    this.trigger('ready');
-                });
                 // If a url supplied, add it as the iframe src, to load the page
                 if (isUrl(bodyContents)){
                     attr.src = bodyContents;
@@ -160,18 +157,33 @@
                     this
                         // When the iframe is ready, prepare the document and its contents
                         .ready(function(){
+                            // Remove handler for the native onload event
+                            this._onload(function(){});
+                                                    
+                            // Prepare the iframe document
                             if (browserNeedsDocumentPreparing){
                                 this._prepareDocument();
                             }
+                            
+                            // Apply 'load' hander to the native onload event
+                            this._onload(function(){
+                                this.trigger('load');
+                            });
+                            
                             // Check if the iframe is all OK to continue loading (e.g. guarding against browser bugs with external src leakage)
                             if (this._okToLoad()){
+                                // Setup iframe document caching
+                                // Ridiculously, each time the iframe element is moved, or removed and re-inserted into the DOM, then the native onload event fires and the iframe's document is discarded. (This doesn't happen in IE, thought). So we need to bring back the contents from the discarded document, by caching it and restoring from the cache on each 'load' event.
+                                if (browserDestroysDocumentWhenIframeMoved){
+                                    this.load(this.cache);
+                                }
                                 // Setup auto-resize event listeners
                                 if (this.options.autoresize){
                                     this
                                         .bind('headContents', this.matchSize)
                                         .bind('bodyContents', this.matchSize);
-                                        // TODO: How should this be simplified, so that a call to contents() doesn't lead to two calls to matchSize()?
-                                }                            
+                                        // TODO: How should this be simplified, so that a call to contents() doesn't lead to two calls to matchSize()? In this function, we could use the 'contents' event, but it makes sense to use 'headContents' and 'bodyContents' for general usage.
+                                }
                                 this
                                     // Let anchor links open pages in the default target
                                     .live('a', 'click', function(){
@@ -182,25 +194,13 @@
                                     // Change head and body contents
                                     ._trim()
                                     .title(this.options.title)
-                                    .contents(headContents, bodyContents);
-                                
-                                // Iframe document persistance:
-                                // Each time the onload event fires, the iframe's document is discarded (the onload event doesn't refire in IE), so we need to bring back the contents from the discarded document
-                                if (browserDestroysDocumentWhenIframeMoved){
-                                    this
-                                        .load(this.cache)
-                                        .cache();
-                                }
+                                    .contents(headContents, bodyContents)
+                                    .trigger('load');
                             }
                             else {
                                 // There's a problem with the iframe. Reload.
                                 // TODO: Add some kind of count, to guard against infinite reloading
-                                this
-                                    // Trigger the 'ready' event once the reload completes
-                                    .one('load', function(){
-                                        this.trigger('ready');
-                                    })
-                                    .reload();
+                                this.reload();
                             }
                         });
                 }
@@ -220,7 +220,7 @@
                     // Pin the 'load' event to the iframe element's native 'onload' event
                     // TODO: Possible loading flow: pass 'ready' callback to _onload(), then in the 'ready' handler, trigger 'load' and pass 'load' callback to _onload()
                     ._onload(function(){
-                        this.trigger('load');
+                        this.trigger('ready');
                     })
                     // Init complete
                     .trigger('init');
@@ -233,7 +233,7 @@
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
             trigger : function(type, data){
-                //_(this.attr('id') + ': *' + type + '*', data);                
+                _(this.attr('id') + ': *' + type + '*', data);                
                 event.trigger(type + '.' + ns, data, this);
                 return this;
             },
@@ -389,9 +389,10 @@
                     args = arguments,
                     matchWidth = (args.length>0) ? args[0] : true,
                     matchHeight = (args.length>1) ? args[1] : true,
+                    htmlElement = this.$('html'),
                     bodyChildren = this.body().children(),
-                    width = bodyChildren.width(),
-                    height = bodyChildren.height();
+                    width = Math.max(htmlElement.width(), bodyChildren.width()),
+                    height = Math.max(htmlElement.height(), bodyChildren.height());
                             
                 if (matchWidth){
                     this.width(width);
@@ -541,7 +542,10 @@
                 var doc = this.$()[0];
                 if (doc){        
                     doc.open();
-                    doc.write('<head></head><body></body>');
+                    doc.write(
+                        this.options.doctype + '\n' +
+                        '<head></head><body></body>'
+                    );
                     doc.close();
                 }
                 return this;
