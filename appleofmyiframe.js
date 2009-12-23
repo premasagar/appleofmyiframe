@@ -241,21 +241,17 @@
                 // this.doctype() // returns doctype object
             doctype : function(v){
                 var doctype;
-                
+                                
                 if (v){
-                    doctype = '<!DOCTYPE ';          
-                    if (v === true){
-                        v = this.options.doctype;
-                    }
-                    if (v === 5){ // html5 doctype
-                        doctype += 'html';
-                    }
-                    doctype += '>';
-                    this.$()[0].writeln(doctype); // write doctype to iframe's document DOM
+                    this.options.doctype = v;
                     return this;
                 }
-                
-                return this.$()[0].doctype; // return iframe document object's native doctype property
+                v = this.options.doctype;
+                doctype = '<!DOCTYPE ';
+                if (v === 5){ // html5 doctype
+                    doctype += 'html';
+                }
+                return doctype + '>';
             },
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
@@ -364,7 +360,7 @@
                     doc = this.$()[0];
                     if (doc){
                         doc.open();
-                        this.doctype(true);
+                        doc.writeln(this.doctype());
                         doc.write(
                             '<html>' + 
                                 '<head><title>' + this.options.title + '</title></head>' +
@@ -580,24 +576,6 @@
                                 
                 return appendMethod;
             },
-            
-            /*
-            _prepareDocument : function(){
-                var doc = this.$()[0];
-                if (doc){        
-                    doc.open();
-                    this.doctype(true);
-                    doc.write(
-                        '<html>' + 
-                            '<head><title>' + this.options.title + '</title></head>' +
-                            '<body></body>' +
-                        '</html>'
-                    );
-                    doc.close();
-                }
-                return this;
-            },
-            */
             
             _trim : function(){
                 this.body()
