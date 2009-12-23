@@ -200,7 +200,7 @@
         });
     });
 
-
+/*
     // Determine appendMethod
     var stealth = $('<div></div>')
         .addClass('stealth')
@@ -221,7 +221,7 @@
             $('#append-method').text("None required");
         }
     }, 1500);
-        
+*/
   
     $('button#move-iframes')
         .toggle(
@@ -273,6 +273,7 @@
         
     
     window.i.push(
+    /*
         // External src iframes
         $.iframe('http://javascript.crockford.com/code.html')
             .attr('id', 'i' + count++)
@@ -296,7 +297,7 @@
             .attr('id', 'i' + count++)
             .appendTo('#stage1'),
             
-        
+        */
         $.iframe(
             '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\' document contents.</p>',
             {

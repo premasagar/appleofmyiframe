@@ -115,7 +115,7 @@
                         allowTransparency:true,
                         src:'about:blank'
                     },
-                    doctype: '<!DOCTYPE html>',
+                    doctype: 5, // html5 doctype
                     autoresize:true,
                     target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
                     css:$.extend({}, cssPlain),
@@ -158,15 +158,18 @@
                         // When the iframe is ready, prepare the document and its contents
                         .ready(function(){
                             // Remove handler for the native onload event
-                            this._onload(function(){});
+                            
+                            // !NO. attachEvent will keep adding more handlers...
+                            this._onload(function(){_(this.attr('id') + ': null onload');});
                                                     
                             // Prepare the iframe document
-                            if (browserNeedsDocumentPreparing){
-                                this._prepareDocument();
+                            if (true || browserNeedsDocumentPreparing){
+                                this.document(true);
                             }
                             
                             // Apply 'load' hander to the native onload event
                             this._onload(function(){
+                                _(this.attr('id') + ': load onload');
                                 this.trigger('load');
                             });
                             
@@ -229,6 +232,30 @@
             $ : function(arg){
                 var doc = this.document();
                 return arg ? $(arg, doc) : doc;
+            },
+            
+            
+            // doctype() examples:
+                // this.doctype(5);
+                // this.doctype(4.01, 'strict');
+                // this.doctype() // returns doctype object
+            doctype : function(v){
+                var doctype;
+                
+                if (v){
+                    doctype = '<!DOCTYPE ';          
+                    if (v === true){
+                        v = this.options.doctype;
+                    }
+                    if (v === 5){ // html5 doctype
+                        doctype += 'html';
+                    }
+                    doctype += '>';
+                    this.$()[0].writeln(doctype); // write doctype to iframe's document DOM
+                    return this;
+                }
+                
+                return this.$()[0].doctype; // return iframe document object's native doctype property
             },
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
@@ -330,7 +357,24 @@
                     );
             },
         
-            document : function(){
+            document : function(write){
+                var doc;
+                // TODO: Should this first check to see if there is a head and body element already? E.g. in case where iframe is appended to DOM and, before the 'load' & 'ready' events fire, some contents is appended to the head or body - the contents would be overwritten here.
+                if (write){
+                    doc = this.$()[0];
+                    if (doc){
+                        doc.open();
+                        this.doctype(true);
+                        doc.write(
+                            '<html>' + 
+                                '<head><title>' + this.options.title + '</title></head>' +
+                                '<body></body>' +
+                            '</html>'
+                        );
+                        doc.close();
+                    }
+                    return this;
+                }
                 return $(this.window().attr('document') || []);
             },
             
@@ -537,19 +581,23 @@
                 return appendMethod;
             },
             
-            // TODO: Should this first check to see if there is a head and body element already? E.g. in case where iframe is appended to DOM and, before the 'load' & 'ready' events fire, some contents is appended to the head or body - the contents would be overwritten here.
+            /*
             _prepareDocument : function(){
                 var doc = this.$()[0];
                 if (doc){        
                     doc.open();
+                    this.doctype(true);
                     doc.write(
-                        this.options.doctype + '\n' +
-                        '<head></head><body></body>'
+                        '<html>' + 
+                            '<head><title>' + this.options.title + '</title></head>' +
+                            '<body></body>' +
+                        '</html>'
                     );
                     doc.close();
                 }
                 return this;
             },
+            */
             
             _trim : function(){
                 this.body()
@@ -575,6 +623,7 @@
                     aomi = this,
                     iframe = this[0],
                     onload = function(){
+                    _(aomi.attr('id') + ': ready onload');
                         callback.call(aomi);
                     };
                     
