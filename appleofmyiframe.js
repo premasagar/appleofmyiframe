@@ -293,6 +293,27 @@
 		        return this;
 	        },
             
+            /*
+            Examples:
+            var aomi = $.iframe();
+            aomi(fn);
+            aomi(html);
+            aomi(head, body);
+            
+            aomi.history(-1);
+            
+            aomi.load(0); // index in history
+            aomi.load(fn); // initialize? or bind callback for future 'load' events?
+            aomi.load(html); // string, appended to body
+            aomi.load(head, body);
+            
+            $.iframe.doctypes = {
+                html5: '<!DOCTYPE html>'
+            };
+            
+            aomi.doctype('html5') === $.iframe.doctypes['html5'];
+            */
+            
             load: function(callback){
                 return this.bind('load', callback);
             },
