@@ -95,56 +95,39 @@
             backgroundColor:'transparent'
         },
         
+        constructorArgs = {
+            headContents:'',
+            bodyContents:'',
+            options:{
+                attr:{
+                    scrolling:'no',
+                    frameBorder:0,
+                    allowTransparency:true,
+                    src:'about:blank'
+                },
+                doctype:5, // html5 doctype
+                autoresize:true,
+                target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
+                css:$.extend({}, cssPlain),
+                title:''
+            },
+            callback: function(){}
+        },
+        
         // Main class
         AppleOfMyIframe = new JqueryClass({
             initialize : function(){
                 var
                     aomi = this,
-                    args = this._constructorArgs,
-                    headContents, bodyContents, optionsFound, callback, attr;
+                    args = this.args($.makeArray(arguments)),
+                    options = args.options,
+                    attr;
                 
-                if (!args){
-                    args = $.makeArray(arguments);
-                    this._constructorArgs = args;
-                }
-                
-                this.options = {
-                    attr:{
-                        scrolling:'no',
-                        frameBorder:0,
-                        allowTransparency:true,
-                        src:'about:blank'
-                    },
-                    doctype: 5, // html5 doctype
-                    autoresize:true,
-                    target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
-                    css:$.extend({}, cssPlain),
-                    title:''
-                };
-                
-                // All arguments are optional, so we need to determine which have been supplied
-                $.each(args.reverse(), function(i, arg){
-                    if (!callback && $.isFunction(arg)){
-                        callback = arg;
-                    }
-                    else if (!optionsFound && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
-                        optionsFound = true;
-                        $.extend(true, aomi.options, arg);
-                    }
-                    // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers? Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
-                    else if (!bodyContents && typeof arg !== 'undefined'){
-                        bodyContents = arg;
-                    }
-                    // Once callback and options are assigned, any remaining args must be the headContents; then exit loop
-                    else if (!headContents && typeof arg !== 'undefined'){
-                        headContents = arg;
-                    }
-                });
-                attr = this.options.attr;
+                attr = options.attr;
                 
                 // If a url supplied, add it as the iframe src, to load the page
-                if (isUrl(bodyContents)){
-                    attr.src = bodyContents;
+                if (isUrl(args.bodyContents)){
+                    options.attr.src = args.bodyContents;
                     
                     // IE6 repaint - required a) for external iframes that are added to the doc while they are hidden, and b) for some external iframes that are moved in the DOM (e.g. google.co.uk)
                     if (browserRequiresRepaintForExternalIframes){
@@ -153,7 +136,7 @@
                 }
                                 
                 // If an injected iframe (i.e. without a document url set as the src)
-                else if (bodyContents || headContents){
+                else if (args.bodyContents || args.headContents){
                     this
                         // When the iframe is ready, prepare the document and its contents
                         .ready(function(){
@@ -164,11 +147,11 @@
                                                     
                             // Prepare the iframe document
                             if (true || browserNeedsDocumentPreparing){
-                                this.document(true);
+                                this.document(this.args());
                             }
                             
                             // Apply 'load' hander to the native onload event
-                            this._onload(function(){
+                            this.iframeLoad(function(){
                                 _(this.attr('id') + ': load onload');
                                 this.trigger('load');
                             });
@@ -181,7 +164,7 @@
                                     this.load(this.cache);
                                 }
                                 // Setup auto-resize event listeners
-                                if (this.options.autoresize){
+                                if (options.autoresize){
                                     this
                                         .bind('headContents', this.matchSize)
                                         .bind('bodyContents', this.matchSize);
@@ -191,13 +174,13 @@
                                     // Let anchor links open pages in the default target
                                     .live('a', 'click', function(){
                                         if (!$(this).attr('target') && $(this).attr('href')){
-                                            $(this).attr('target', aomi.options.target);
+                                            $(this).attr('target', options.target);
                                         }
                                     })
                                     // Change head and body contents
                                     ._trim()
-                                    .title(this.options.title)
-                                    .contents(headContents, bodyContents)
+                                    .title(options.title)
+                                    .contents(args.headContents, args.bodyContents)
                                     .trigger('load');
                             }
                             else {
@@ -209,7 +192,7 @@
                 }
                 
                 // If a callback was supplied, fire it on 'ready'
-                if (callback){
+                if (args.callback){
                     this.ready(function(){
                         callback.call(this);
                     });
@@ -218,8 +201,8 @@
                 }
                 
                 return this
-                    // Absorb the iframe element
-                    ._absorbElement(this.options)                                
+                    // Attach the iframe element
+                    ._attachElement(this.options())                                
                     // Pin the 'load' event to the iframe element's native 'onload' event
                     // TODO: Possible loading flow: pass 'ready' callback to _onload(), then in the 'ready' handler, trigger 'load' and pass 'load' callback to _onload()
                     ._onload(function(){
@@ -243,10 +226,10 @@
                 var doctype;
                                 
                 if (v){
-                    this.options.doctype = v;
+                    this.options().doctype = v;
                     return this;
                 }
-                v = this.options.doctype;
+                v = this.options().doctype;
                 doctype = '<!DOCTYPE ';
                 if (v === 5){ // html5 doctype
                     doctype += 'html';
@@ -329,45 +312,66 @@
             
             
             */
-            document : $.extend(
-                function(init){ // true === new doc; [args]
-                    if (init){
-                        if (init === true){
-                            return this.document.create();
-                        }
-                        var args = this.args($makeArray(arguments));
-                        this.options(args.options);
-                        this.ready(args.callback);
-                        return this.contents(args.headContents, args.bodyContents);
-                    }
-                    return $(this.window().document);                
-                },
-                {
-                    create : function(text){
-                        var doc = this.$();
-                        text = text || '';                        
-                        doc.open();
-                        doc.write(text);
-                        doc.close();
-                        return this();
-                    }
+            
+            
+            document : function(){
+                var
+                    doc = $(this.window().attr('document') || []),
+                    args;
+                
+                if (!arguments.length){
+                    return doc;
                 }
-            ),
+                if (doc.length){
+                    args = this.args($.makeArray(arguments));
+                    doc = doc[0];
+                    doc.open();
+                    doc.write(
+                        this.doctype() + '\n' +
+                        '<head>' + args.headContents + '</head>' +
+                        '<body>' + args.bodyContents + '</body>'                    
+                    );
+                    doc.close();
+                }
+                return this;
+            },
+
             
             args : function(){
-                var argsCache = this._args;
-                return arguments.length ?
-                    this._args = $.extend(true, argsCache, $.makeArray(arguments)) :
-                    argsCache;
+                var
+                    args = $.makeArray(arguments),
+                    argsCache = this._args || constructorArgs,
+                    headContents, bodyContents, options, callback;
+                
+                if (!args.length){
+                    return argsCache;
+                }
+                // All arguments are optional
+                $.each(args.reverse(), function(i, arg){
+                    if (!callback && $.isFunction(arg)){
+                        callback = arg;
+                    }
+                    else if (!options && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
+                        options = arg;
+                    }
+                    // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers? Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
+                    else if (!bodyContents && typeof arg !== 'undefined'){
+                        bodyContents = arg;
+                    }
+                    // Once callback and options are assigned, any remaining args must be the headContents; then exit loop
+                    else if (!headContents && typeof arg !== 'undefined'){
+                        headContents = arg;
+                    }
+                });
+                this._args = $.extend(true, argsCache, {});
+                return this;
             },
             
-            options : function(options){
-                var optionsCache = this._options;
-                return options ?
-                    this._options = $.extend(true, optionsCache, options) :
-                    optionsCache;
+            options : function(newOptions){
+                return newOptions ?
+                    this.args({options:newOptions}) :
+                    this.args().options;
             },
-            
             
             // Advised not to use this API method externally
             // Proxy for iframe's native load event, with free jQuery event handling
@@ -386,6 +390,7 @@
                 return this.bind('ready', callback);
             },
             
+            // TODO: reload using this.document(this.args().headContents, etc);
             reload : function(extreme){
                 var newIframe, oldAttr;
                 // A 'soft' reload: re-apply the iframe's src attribute              
@@ -438,6 +443,7 @@
                     );
             },
         
+            /*
             document : function(write){
                 var doc;
                 // TODO: Should this first check to see if there is a head and body element already? E.g. in case where iframe is appended to DOM and, before the 'load' & 'ready' events fire, some contents is appended to the head or body - the contents would be overwritten here.
@@ -458,6 +464,7 @@
                 }
                 return $(this.window().attr('document') || []);
             },
+            */
             
             body : function(contents){
                 var body = this.$('body');
@@ -610,7 +617,7 @@
 	            return this;
             },
             
-            _absorbElement : function(options){
+            _attachElement : function(options){
                 $.fn.init.call(this, '<iframe></iframe>')
                     .css(options.css)
                     .attr(options.attr);
