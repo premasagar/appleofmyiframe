@@ -312,9 +312,73 @@
             };
             
             aomi.doctype('html5') === $.iframe.doctypes['html5'];
-            */
             
-            load: function(callback){
+            aomi.options(args) === {
+                headContents:'',
+                bodyContents:'',
+                options:{},
+                callback:function(){}
+            };
+            aomi.document(a1, a2, a3, a4) === aomi.document(
+                aomi
+                    .options($.makeArray(arguments))
+                    .options()
+            );
+            aomi.options() === aomi._options;
+            aomi.iframeLoad 
+            
+            
+            */
+            document : $.extend(
+                function(init){ // true === new doc; [args]
+                    if (init){
+                        if (init === true){
+                            return this.document.create();
+                        }
+                        var args = this.args($makeArray(arguments));
+                        this.options(args.options);
+                        this.ready(args.callback);
+                        return this.contents(args.headContents, args.bodyContents);
+                    }
+                    return $(this.window().document);                
+                },
+                {
+                    create : function(text){
+                        var doc = this.$();
+                        text = text || '';                        
+                        doc.open();
+                        doc.write(text);
+                        doc.close();
+                        return this();
+                    }
+                }
+            ),
+            
+            args : function(){
+                var argsCache = this._args;
+                return arguments.length ?
+                    this._args = $.extend(true, argsCache, $.makeArray(arguments)) :
+                    argsCache;
+            },
+            
+            options : function(options){
+                var optionsCache = this._options;
+                return options ?
+                    this._options = $.extend(true, optionsCache, options) :
+                    optionsCache;
+            },
+            
+            
+            // Advised not to use this API method externally
+            // Proxy for iframe's native load event, with free jQuery event handling
+            iframeLoad : function(callback, unbind){
+                $(this[0])
+                    [unbind ? 'unbind' : 'bind']
+                    ('load', callback);
+                return this;
+            },
+            
+            load : function(callback){
                 return this.bind('load', callback);
             },
             
