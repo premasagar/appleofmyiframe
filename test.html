@@ -9,8 +9,17 @@
   -->
   <script src="appleofmyiframe.js"></script>
   <style>
+    body {
+        padding:0.2em 0.5em;
+        margin:0;
+    }
+    h1 {
+        font-size:1.62em;
+        padding:0;
+        margin:0;
+    }
     button {
-        font-size:1.38em;
+        font-size:1em;
         padding:0.16em;
         display:block;
         margin:0 0.38em 0.38em 0;
@@ -26,11 +35,11 @@
     #tests, #reports {
         float:left;
         margin:0 6.85em 2.62em 0;
-        padding-bottom:2.62em;
+        padding-bottom:1.62em;
         border-bottom:1px solid #ccc;
     }
     #tests .desc {
-        font-size:1.38em;
+        font-size:1em;
     }
     #reports dt {
         margin-top:1em;
@@ -38,8 +47,8 @@
     .stage {
         float:left;
         width:38.2%;
-        padding:1.62em;
-        margin-right:1.62em;
+        padding:0.62em;
+        margin-right:0.62em;
         border:1px solid #ccc;
     }
     #stage1 {
@@ -55,7 +64,7 @@
     }
     iframe {
         display:block;
-        margin:1.62em !important;
+        margin:1.62em 0.62em !important;
         border:1px solid #336 !important;
     }
   </style>
@@ -66,10 +75,10 @@
   
   <div id="tests">
       <h2>Tests</h2>
-      <p class="desc">Do the iframes and their contents stay intact throughout?</p>
+      <p class="desc">Do the iframes stay intact?</p>
       <div id="controls">
         <ol>
-            <li><button id="move-iframes">Move iframes to a new DOM node</button></li>
+            <li><button id="move-iframes">Move iframes in DOM</button></li>
             <li><button id="reload-page">Reload host window</button></li>
             <li><button id="repaint-iframes">Repaint iframes</button>
             <li><button id="reload-iframes">Reload iframes</button>
@@ -189,7 +198,7 @@
         iframes = win.i = [],
         counter = 0
     win.i = [];
-    count = 0;;
+    count = 0;
 
     $('#browser .user-agent')
     .val(window.navigator.userAgent)
@@ -200,7 +209,6 @@
         });
     });
 
-/*
     // Determine appendMethod
     var stealth = $('<div></div>')
         .addClass('stealth')
@@ -218,10 +226,10 @@
         .appendTo(stealth);
     window.setTimeout(function(){
         if (!$('#append-method').text()){
-            $('#append-method').text("None required");
+            $('#append-method').text("None applied");
         }
-    }, 1500);
-*/
+    }, 2500);
+//return;
   
     $('button#move-iframes')
         .toggle(
@@ -273,14 +281,13 @@
         
     
     window.i.push(
-    /*
         // External src iframes
         $.iframe('http://javascript.crockford.com/code.html')
             .attr('id', 'i' + count++)
             .appendTo('#stage1'),
             
         
-        $.iframe('http://google.it')
+        $.iframe('http://www.google.it')
             .attr('id', 'i' + count++)
             .appendTo('#stage1'),
             
@@ -297,7 +304,7 @@
             .attr('id', 'i' + count++)
             .appendTo('#stage1'),
             
-        */
+
         $.iframe(
             '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\' document contents.</p>',
             {

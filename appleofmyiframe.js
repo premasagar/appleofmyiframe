@@ -1,4 +1,4 @@
-/*!
+        /*!
 * AppleOfMyIframe
 *     v0.9
 **
@@ -95,34 +95,29 @@
             backgroundColor:'transparent'
         },
         
-        constructorArgs = {
-            headContents:'',
-            bodyContents:'',
-            options:{
-                attr:{
-                    scrolling:'no',
-                    frameBorder:0,
-                    allowTransparency:true,
-                    src:'about:blank'
-                },
-                doctype:5, // html5 doctype
-                autoresize:true,
-                target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
-                css:$.extend({}, cssPlain),
-                title:''
+        defaultOptions = {
+            attr:{
+                scrolling:'no',
+                frameBorder:0,
+                allowTransparency:true,
+                src:'about:blank'
             },
-            callback: function(){}
+            doctype:5, // html5 doctype
+            autoresize:true,
+            target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
+            css:$.extend({}, cssPlain),
+            title:''
         },
-        
+                
         // Main class
         AppleOfMyIframe = new JqueryClass({
             initialize : function(){
-                var
-                    aomi = this,
-                    args = this.args($.makeArray(arguments)),
-                    options = args.options,
-                    attr;
+                var args, options, attr;
                 
+                // Cache the constructor arguments, to enable later reloading
+                this.args.apply(this, arguments);
+                args = this.args(); // retrieve the sorted arguments
+                options = this.options();
                 attr = options.attr;
                 
                 // If a url supplied, add it as the iframe src, to load the page
@@ -140,61 +135,46 @@
                     this
                         // When the iframe is ready, prepare the document and its contents
                         .ready(function(){
+                            var options = this.options();
                             // Remove handler for the native onload event
                             
-                            // !NO. attachEvent will keep adding more handlers...
-                            this._onload(function(){_(this.attr('id') + ': null onload');});
-                                                    
                             // Prepare the iframe document
-                            if (true || browserNeedsDocumentPreparing){
-                                this.document(this.args());
+                            /*
+                            if (browserNeedsDocumentPreparing){
+                                this.document(true);
                             }
-                            
-                            // Apply 'load' hander to the native onload event
-                            this.iframeLoad(function(){
-                                _(this.attr('id') + ': load onload');
-                                this.trigger('load');
-                            });
-                            
-                            // Check if the iframe is all OK to continue loading (e.g. guarding against browser bugs with external src leakage)
-                            if (this._okToLoad()){
-                                // Setup iframe document caching
-                                // Ridiculously, each time the iframe element is moved, or removed and re-inserted into the DOM, then the native onload event fires and the iframe's document is discarded. (This doesn't happen in IE, thought). So we need to bring back the contents from the discarded document, by caching it and restoring from the cache on each 'load' event.
-                                if (browserDestroysDocumentWhenIframeMoved){
-                                    this.load(this.cache);
-                                }
-                                // Setup auto-resize event listeners
-                                if (options.autoresize){
-                                    this
-                                        .bind('headContents', this.matchSize)
-                                        .bind('bodyContents', this.matchSize);
-                                        // TODO: How should this be simplified, so that a call to contents() doesn't lead to two calls to matchSize()? In this function, we could use the 'contents' event, but it makes sense to use 'headContents' and 'bodyContents' for general usage.
-                                }
+                            */
+                            // Setup iframe document caching
+                            // Ridiculously, each time the iframe element is moved, or removed and re-inserted into the DOM, then the native onload event fires and the iframe's document is discarded. (This doesn't happen in IE, thought). So we need to bring back the contents from the discarded document, by caching it and restoring from the cache on each 'load' event.
+                            if (browserDestroysDocumentWhenIframeMoved){
+                                this.load(this.cache);
+                            }
+                            this.document(true);
+                            // Setup auto-resize event listeners
+                            if (options.autoresize){
                                 this
-                                    // Let anchor links open pages in the default target
-                                    .live('a', 'click', function(){
-                                        if (!$(this).attr('target') && $(this).attr('href')){
-                                            $(this).attr('target', options.target);
-                                        }
-                                    })
-                                    // Change head and body contents
-                                    ._trim()
-                                    .title(options.title)
-                                    .contents(args.headContents, args.bodyContents)
-                                    .trigger('load');
+                                    .bind('headContents', this.matchSize)
+                                    .bind('bodyContents', this.matchSize);
+                                    // TODO: How should this be simplified, so that a call to contents() doesn't lead to two calls to matchSize()? In this function, we could use the 'contents' event, but it makes sense to use 'headContents' and 'bodyContents' for general usage.
                             }
-                            else {
-                                // There's a problem with the iframe. Reload.
-                                // TODO: Add some kind of count, to guard against infinite reloading
-                                this.reload();
-                            }
-                        });
+                            this
+                                // Let anchor links open pages in the default target
+                                .live('a', 'click', function(){
+                                    if (!$(this).attr('target') && $(this).attr('href')){
+                                        $(this).attr('target', options.target);
+                                    }
+                                })
+                                // Change head and body contents
+                                ._trim()
+                                .title(options.title)
+                                .contents(args.headContents, args.bodyContents);
+                    });
                 }
                 
                 // If a callback was supplied, fire it on 'ready'
                 if (args.callback){
                     this.ready(function(){
-                        callback.call(this);
+                        args.callback.apply(this, arguments);
                     });
                     // NOTE: This block used to read "this.ready(callback);", which should be identical. However, WebKit (seen in Chrome 4) doesn't successfully apply manipulations to the iframe head on a reload(true) when the block reads that way. Why? Who knows?
                     // TODO: Investigate this. Perhaps the bind/unbind/trigger events need changing instead?
@@ -202,12 +182,7 @@
                 
                 return this
                     // Attach the iframe element
-                    ._attachElement(this.options())                                
-                    // Pin the 'load' event to the iframe element's native 'onload' event
-                    // TODO: Possible loading flow: pass 'ready' callback to _onload(), then in the 'ready' handler, trigger 'load' and pass 'load' callback to _onload()
-                    ._onload(function(){
-                        this.trigger('ready');
-                    })
+                    ._attachElement()
                     // Init complete
                     .trigger('init');
             },
@@ -239,7 +214,15 @@
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
             trigger : function(type, data){
-                _(this.attr('id') + ': *' + type + '*', data);                
+                // DEBUG LOGGING
+                var debug = [this.attr('id') + ': *' + type + '*'];
+                if (data){
+                    debug.push(data);
+                }
+                //debug.push(arguments.callee.caller);
+                _.apply(null, debug);                
+                
+                
                 event.trigger(type + '.' + ns, data, this);
                 return this;
             },
@@ -314,22 +297,24 @@
             */
             
             
-            document : function(){
+            document : function(useCachedArgs){
                 var
-                    doc = $(this.window().attr('document') || []),
+                    doc = this.window().attr('document'),
                     args;
                 
                 if (!arguments.length){
-                    return doc;
+                    return $(doc || []);
                 }
-                if (doc.length){
-                    args = this.args($.makeArray(arguments));
-                    doc = doc[0];
+                if (doc){
+                    if (useCachedArgs !== true){
+                        // Cache supplied args
+                        this.args.apply(this, arguments);
+                    }
+                    args = this.args();
                     doc.open();
                     doc.write(
                         this.doctype() + '\n' +
-                        '<head>' + args.headContents + '</head>' +
-                        '<body>' + args.bodyContents + '</body>'                    
+                        '<head></head><body></body>'                    
                     );
                     doc.close();
                 }
@@ -340,46 +325,47 @@
             args : function(){
                 var
                     args = $.makeArray(arguments),
-                    argsCache = this._args || constructorArgs,
-                    headContents, bodyContents, options, callback;
+                    found = {},
+                    argsCache;
                 
+                // Get cached constructor arguments
+                if (!this._args){
+                    this._args = {
+                        headContents: '',
+                        bodyContents: '',
+                        options: $.extend(true, {}, defaultOptions),
+                        callback: function(){}
+                    };
+                }
+                argsCache = this._args;
                 if (!args.length){
                     return argsCache;
                 }
-                // All arguments are optional
+                // All arguments are optional. Determine which were supplied.
                 $.each(args.reverse(), function(i, arg){
-                    if (!callback && $.isFunction(arg)){
-                        callback = arg;
+                    if (!found.callback && $.isFunction(arg)){
+                        found.callback = arg;
                     }
-                    else if (!options && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
-                        options = arg;
+                    else if (!found.options && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
+                        found.options = arg;
                     }
                     // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers? Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
-                    else if (!bodyContents && typeof arg !== 'undefined'){
-                        bodyContents = arg;
+                    else if (!found.bodyContents && typeof arg !== 'undefined'){
+                        found.bodyContents = arg;
                     }
                     // Once callback and options are assigned, any remaining args must be the headContents; then exit loop
-                    else if (!headContents && typeof arg !== 'undefined'){
-                        headContents = arg;
+                    else if (!found.headContents && typeof arg !== 'undefined'){
+                        found.headContents = arg;
                     }
                 });
-                this._args = $.extend(true, argsCache, {});
+                $.extend(true, argsCache, found);
                 return this;
             },
             
             options : function(newOptions){
                 return newOptions ?
-                    this.args({options:newOptions}) :
+                    this.args(newOptions) :
                     this.args().options;
-            },
-            
-            // Advised not to use this API method externally
-            // Proxy for iframe's native load event, with free jQuery event handling
-            iframeLoad : function(callback, unbind){
-                $(this[0])
-                    [unbind ? 'unbind' : 'bind']
-                    ('load', callback);
-                return this;
             },
             
             load : function(callback){
@@ -390,32 +376,24 @@
                 return this.bind('ready', callback);
             },
             
-            // TODO: reload using this.document(this.args().headContents, etc);
             reload : function(extreme){
-                var newIframe, oldAttr;
-                // A 'soft' reload: re-apply the iframe's src attribute              
-                if (!extreme){
+                // 'soft reload': re-apply src attribute
+                if (!extreme || !this.hasBlankSrc()){
                     this.attr('src', this.attr('src'));
                 }
-                // A 'hard' reload: re-apply the constructor's arguments
+                // 'hard reload': re-apply original constructor args
                 else {
-                    $.iframe.apply(this, this._constructorArgs);
-                    newIframe = $.iframe.apply({}, this._constructorArgs);
-                    oldAttr = {
-                        className: this.attr('class'),
-                        id: this.attr('id'),
-                        style: this.attr('style')
-                    };
-                    this.replaceWith(newIframe);
-                    this[0] = newIframe[0];
-                    this.attr(oldAttr);
+                    this.document(true);
                 }
                 return this.trigger('reload', !!extreme);
             },
             
             // Trigger a repaint of the iframe - e.g. for external iframes in IE6, where the contents aren't always shown at first
             repaint : function(){
-                this.toggleClass(ns + '-repaint');
+                var className = ns + '-repaint';
+                this
+                    .addClass(className)
+                    .removeClass(className);
                 return this.trigger('repaint');
             },
         
@@ -442,29 +420,6 @@
                             this.attr('src') // iframe is out of the DOM, so its window doesn't exist and it has no location, return iframe element src
                     );
             },
-        
-            /*
-            document : function(write){
-                var doc;
-                // TODO: Should this first check to see if there is a head and body element already? E.g. in case where iframe is appended to DOM and, before the 'load' & 'ready' events fire, some contents is appended to the head or body - the contents would be overwritten here.
-                if (write){
-                    doc = this.$()[0];
-                    if (doc){
-                        doc.open();
-                        doc.writeln(this.doctype());
-                        doc.write(
-                            '<html>' + 
-                                '<head><title>' + this.options.title + '</title></head>' +
-                                '<body></body>' +
-                            '</html>'
-                        );
-                        doc.close();
-                    }
-                    return this;
-                }
-                return $(this.window().attr('document') || []);
-            },
-            */
             
             body : function(contents){
                 var body = this.$('body');
@@ -553,6 +508,9 @@
                 if (browserRequiresRepaintForExternalIframes && this.hasExternalDocument()){
                     this.repaint();
                 }
+                if (!this.hasBlankSrc()){ // external iframes sometimes mess up their contents. TODO: Should this use .hasExternalDocument instead?
+                    this.reload();
+                }
                 return this.trigger('appendTo');
             },
             
@@ -617,11 +575,48 @@
 	            return this;
             },
             
-            _attachElement : function(options){
+            // Advised not to use this API method externally
+            // Proxy for iframe's native load event, with free jQuery event handling
+            iframeLoad : function(callback, unbind){
+                var aomi = this;
+                $(this[0])
+                    [unbind ? 'unbind' : 'bind']
+                    ('load', callback);
+                return this;
+            },
+            
+            _attachElement : function(){
+                var
+                    aomi = this,
+                    options = this.options();
                 $.fn.init.call(this, '<iframe></iframe>')
                     .css(options.css)
                     .attr(options.attr);
-                return this;
+                
+                // Bind 'ready' & 'load' handlers to the iframe's native 'onload' event
+                return this.iframeLoad(
+                    function readyTrigger(){                        
+                        if (aomi._okToLoad()){
+                        // TODO: Does okToLoad need to be tested after document(args) is called?
+                            // If the iframe has properly loaded
+                            aomi
+                                // unbind this handler
+                                .iframeLoad(readyTrigger, true)
+                                // bind the 'load' handler for next time
+                                .iframeLoad(function(){
+                                    aomi.trigger('load');
+                                })
+                                // trigger events on AOMI object
+                                .trigger('ready')
+                                .trigger('load');
+                        }
+                        else {
+                            // There's a problem with the iframe, so reload it
+                            // TODO: Add a counter and prevent infinite reloading
+                            aomi.reload();
+                        }
+                    }
+                );
             },
             
             _windowObj : function(){
@@ -686,25 +681,6 @@
                     ok = false;
                 }
                 return ok;
-            },
-            
-            _onload : function(callback){
-                var
-                    aomi = this,
-                    iframe = this[0],
-                    onload = function(){
-                    _(aomi.attr('id') + ': ready onload');
-                        callback.call(aomi);
-                    };
-                    
-                // W3C
-                iframe.onload = onload;
-                
-                // IE & Opera
-                if (!iframe.onload && iframe.attachEvent){
-                    iframe.attachEvent('onload', onload);
-                }
-                return this;
             }
         });
         
