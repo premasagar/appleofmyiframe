@@ -111,7 +111,7 @@
                 
         // Main class
         AppleOfMyIframe = new JqueryClass({
-            initialize : function(){
+            initialize: function(){
                 var args, options, attr;
                 
                 // Cache the constructor arguments, to enable later reloading
@@ -134,7 +134,7 @@
                 else if (args.bodyContents || args.headContents){
                     this
                         // When the iframe is ready, prepare the document and its contents
-                        .ready(function(){
+                        .ready(function(){                        
                             var options = this.options();
                             // Remove handler for the native onload event
                             
@@ -144,31 +144,32 @@
                                 this.document(true);
                             }
                             */
-                            // Setup iframe document caching
-                            // Ridiculously, each time the iframe element is moved, or removed and re-inserted into the DOM, then the native onload event fires and the iframe's document is discarded. (This doesn't happen in IE, thought). So we need to bring back the contents from the discarded document, by caching it and restoring from the cache on each 'load' event.
-                            if (browserDestroysDocumentWhenIframeMoved){
-                                this.load(this.cache);
-                            }
-                            this.document(true);
-                            // Setup auto-resize event listeners
-                            if (options.autoresize){
-                                this
-                                    .bind('headContents', this.matchSize)
-                                    .bind('bodyContents', this.matchSize);
-                                    // TODO: How should this be simplified, so that a call to contents() doesn't lead to two calls to matchSize()? In this function, we could use the 'contents' event, but it makes sense to use 'headContents' and 'bodyContents' for general usage.
-                            }
+                            
                             this
+                                .document(true) // TODO: Check in IE
+                                ._trim()
+                                .title(options.title)
+                                .contents(args.headContents, args.bodyContents)
                                 // Let anchor links open pages in the default target
                                 .live('a', 'click', function(){
                                     if (!$(this).attr('target') && $(this).attr('href')){
                                         $(this).attr('target', options.target);
                                     }
-                                })
-                                // Change head and body contents
-                                ._trim()
-                                .title(options.title)
-                                .contents(args.headContents, args.bodyContents);
+                                });
                     });
+                    
+                    // Setup iframe document caching
+                    // Ridiculously, each time the iframe element is moved, or removed and re-inserted into the DOM, then the native onload event fires and the iframe's document is discarded. (This doesn't happen in IE, thought). So we need to bring back the contents from the discarded document, by caching it and restoring from the cache on each 'load' event.
+                    if (browserDestroysDocumentWhenIframeMoved){
+                        this.load(this.cache);
+                    }
+                    // Setup auto-resize event listeners
+                    if (options.autoresize){
+                        this
+                            .bind('headContents', this.matchSize)
+                            .bind('bodyContents', this.matchSize);
+                            // TODO: How should this be simplified, so that a call to contents() doesn't lead to two calls to matchSize()? In this function, we could use the 'contents' event, but it makes sense to use 'headContents' and 'bodyContents' for general usage.
+                    }
                 }
                 
                 // If a callback was supplied, fire it on 'ready'
@@ -187,7 +188,7 @@
                     .trigger('init');
             },
         
-            $ : function(arg){
+            $: function(arg){
                 var doc = this.document();
                 return arg ? $(arg, doc) : doc;
             },
@@ -197,7 +198,7 @@
                 // this.doctype(5);
                 // this.doctype(4.01, 'strict');
                 // this.doctype() // returns doctype object
-            doctype : function(v){
+            doctype: function(v){
                 var doctype;
                                 
                 if (v){
@@ -213,7 +214,7 @@
             },
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
-            trigger : function(type, data){
+            trigger: function(type, data){
                 // DEBUG LOGGING
                 var debug = [this.attr('id') + ': *' + type + '*'];
                 if (data){
@@ -227,17 +228,17 @@
                 return this;
             },
             
-            bind : function(type, callback){
+            bind: function(type, callback){
                 event.add(this, type + '.' + ns, callback);
                 return this;
             },
             
-            unbind : function(type, callback){
+            unbind: function(type, callback){
                 event.remove(this, type + '.' + ns, callback);
                 return this;
             },
             
-            one : function(type, callback){
+            one: function(type, callback){
                 var aomi = this;
                 return this.bind(type, function outerCallback(){
                     callback.apply(aomi, $.makeArray(arguments));
@@ -297,7 +298,7 @@
             */
             
             
-            document : function(useCachedArgs){
+            document: function(useCachedArgs){
                 var
                     doc = this.window().attr('document'),
                     args;
@@ -322,7 +323,7 @@
             },
 
             
-            args : function(){
+            args: function(){
                 var
                     args = $.makeArray(arguments),
                     found = {},
@@ -362,21 +363,21 @@
                 return this;
             },
             
-            options : function(newOptions){
+            options: function(newOptions){
                 return newOptions ?
                     this.args(newOptions) :
                     this.args().options;
             },
             
-            load : function(callback){
+            load: function(callback){
                 return this.bind('load', callback);
             },
             
-            ready : function(callback){
+            ready: function(callback){
                 return this.bind('ready', callback);
             },
             
-            reload : function(extreme){
+            reload: function(extreme){
                 // 'soft reload': re-apply src attribute
                 if (!extreme || !this.hasBlankSrc()){
                     this.attr('src', this.attr('src'));
@@ -389,7 +390,7 @@
             },
             
             // Trigger a repaint of the iframe - e.g. for external iframes in IE6, where the contents aren't always shown at first
-            repaint : function(){
+            repaint: function(){
                 var className = ns + '-repaint';
                 this
                     .addClass(className)
@@ -397,7 +398,7 @@
                 return this.trigger('repaint');
             },
         
-            window : function(){
+            window: function(){
                 var win = this._windowObj();
                 if (win){ // For an injected iframe not yet in the DOM, then win is null
                     try { // For an external iframe, win is accessible, but $(win) will throw a permission denied error
@@ -408,7 +409,7 @@
                 return $([]);
             },
             
-            location : function(){
+            location: function(){
                 var
                     win = this.window(),
                     loc = win.attr('location');
@@ -421,7 +422,7 @@
                     );
             },
             
-            body : function(contents){
+            body: function(contents){
                 var body = this.$('body');
                 if (contents){
                     if (body.length){ // TODO: Perhaps this should also check if the 'ready' event has ever fired - e.g. in situations where iframe has just been added to the DOM, but has not yet loaded
@@ -439,7 +440,7 @@
                 return body;
             },
 
-            head : function(contents){
+            head: function(contents){
                 var head = this.$('head');
                 if (contents){
                     if (head.length){
@@ -457,7 +458,7 @@
                 return head;
             },
             
-            title : function(title){
+            title: function(title){
                 if (typeof title !== 'undefined'){
                     this.options.title = title;
                     this.$().attr('title', title);
@@ -466,12 +467,12 @@
                 return this.$().attr('title');
             },
             
-            style : function(cssText){
+            style: function(cssText){
                 return this.head('<style>' + cssText + '</style>');
             },
         
             // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
-            matchSize : function(){
+            matchSize: function(){
                 var
                     args = arguments,
                     matchWidth = (args.length>0) ? args[0] : true,
@@ -491,7 +492,7 @@
                 return this.trigger('resize', [width, height]);
             },
             
-            contents : function(headContents, bodyContents){
+            contents: function(headContents, bodyContents){
                 if (typeof bodyContents === 'undefined'){
                     bodyContents = headContents;
                     headContents = false;
@@ -502,7 +503,7 @@
             },
         
             // TODO: Add similar methods - e.g. prependTo, replaceWith
-            appendTo : function(obj){
+            appendTo: function(obj){
                 $.fn.appendTo.call(this, obj);
                 // TODO: If we group together manipulation events, the repaint call can be passed as an event listener to those manip events.
                 if (browserRequiresRepaintForExternalIframes && this.hasExternalDocument()){
@@ -515,23 +516,23 @@
             },
             
             // TODO: Currently, this will return true for an iframe that has a cross-domain src attribute and is not yet in the DOM. We should include a check to compare the domain of the host window with the domain of the iframe window - including checking document.domain property
-            isSameDomain : function(){
+            isSameDomain: function(){
                 return this.location() !== null;
             },
             
-            hasExternalDocument : function(){
+            hasExternalDocument: function(){
                 var loc = this.location();
                 return loc === null || (loc !== 'about:blank' && loc !== win.location.href);
                 // NOTE: the comparison with the host window href is because, in WebKit, an injected iframe may have a location set to that url. This would also match an iframe that has a src matching the host document url, though this seems unlikely to take place in practice.
                 // NOTE: this also returns true when the iframe src attribute is for an external document, but the iframe is out of the DOM and so doesn't actually contain a document at that time
             },
             
-            hasBlankSrc : function(){
+            hasBlankSrc: function(){
                 var src = this.attr('src');
                 return !src || src === 'about:blank';
             },
             
-            cache : function(){
+            cache: function(){
 	            var
 	                doc = this.$()[0],
 	                // Check if there's already cached head and body elements
@@ -539,6 +540,8 @@
 	                appendMethod, methodsToTry, htmlElement;
 	                
 	            if (!doc){ // iframe is not in the DOM
+	            // TODO: iHidden fails here
+	            _('not caching');
 	                return this;
 	            }
 	            
@@ -577,7 +580,7 @@
             
             // Advised not to use this API method externally
             // Proxy for iframe's native load event, with free jQuery event handling
-            iframeLoad : function(callback, unbind){
+            iframeLoad: function(callback, unbind){
                 var aomi = this;
                 $(this[0])
                     [unbind ? 'unbind' : 'bind']
@@ -585,7 +588,7 @@
                 return this;
             },
             
-            _attachElement : function(){
+            _attachElement: function(){
                 var
                     aomi = this,
                     options = this.options();
@@ -619,11 +622,11 @@
                 );
             },
             
-            _windowObj : function(){
+            _windowObj: function(){
                 return this[0].contentWindow;
             },
             
-            _appendWith : function(doc, method, parentNode, childNodes){
+            _appendWith: function(doc, method, parentNode, childNodes){
                 if ($.isFunction(doc[method])){
                     try {
                         childNodes.each(
@@ -651,7 +654,7 @@
                 return false;
             },
             
-            _findAppendMethod : function(doc, methods, parentNode, childNodes){
+            _findAppendMethod: function(doc, methods, parentNode, childNodes){
                 var aomi = this, appendMethod;
                 
                 $.each(methods, function(i, method){
@@ -664,18 +667,18 @@
                 return appendMethod;
             },
             
-            _trim : function(){
+            _trim: function(){
                 this.body()
                     .css(cssPlain);
                 return this;
             },
             
-            _hasSrcMismatch : function(){
+            _hasSrcMismatch: function(){
                 return (this.hasBlankSrc() && this.hasExternalDocument());
             },
             
             // A check to prevent the situation where an iframe with an external src is on page, as well as an injected iframe; if the iframes are moved in the DOM and the page reloaded, then the contents of the external src iframe may be duplicated into the injected iframe (seen in FF3.5 and others). This function re-appplies the 'about:blank' src attribute of injected iframes, to force a reload of its content
-            _okToLoad : function(){
+            _okToLoad: function(){
                 var ok = true;
                 if (this._hasSrcMismatch()){ // add other tests here, if required
                     ok = false;
@@ -689,13 +692,13 @@
     $.extend(
         true,
         {
-            iframe : function(headContents, bodyContents, options, callback) {
+            iframe: function(headContents, bodyContents, options, callback) {
                 return new AppleOfMyIframe(headContents, bodyContents, options, callback);
             },
             fn : {
                 // TODO: Allow multiple elements in a collection to be replaced with iframes, e.g. $('.toReplace').intoIframe()
                 // TODO: Where the element doesn't have an explicit width set, the iframe will not be able to resize to it. One hacky method to determine the width: display the element inline, measure its width, then return the display and then set the width of the iframe.
-                intoIframe : function(headContents, options, callback){
+                intoIframe: function(headContents, options, callback){
                     var aomi = $.iframe(headContents, this, options, callback);
                     aomi.replaceAll(this);
                     return aomi;

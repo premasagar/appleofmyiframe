@@ -214,7 +214,7 @@
         .addClass('stealth')
         .appendTo('body');
     var iHidden = $.iframe('<p>blah</p>', {attr:{id:'iHidden'}})
-        .ready(function(){
+        .one('load', function(){
             this.appendTo(stealth);
         })
         .one('restore', function(ev, appendMethod){
