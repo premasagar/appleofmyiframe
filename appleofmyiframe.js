@@ -72,12 +72,6 @@
         browser = $.browser,
         msie = browser.msie,
         ie6 = (msie && win.parseInt(browser.version, 10) === 6),
-        /*
-        opera = browser.opera,
-        browserNeedsDocumentPreparing = (function(){
-            return !msie && !opera;
-        }()),
-        */
         browserDestroysDocumentWhenIframeMoved = (function(){
             return !msie;
         }()),
@@ -133,15 +127,40 @@
                 // If an injected iframe (i.e. without a document url set as the src)
                 else if (args.bodyContents || args.headContents){
                     this
-                        // When the iframe is ready, prepare the document and its contents
-                        .ready(function(){
-                            // Prepare the iframe document
-                            /*
-                            if (browserNeedsDocumentPreparing){
-                                this.document(true);
-                            }
-                            */
-                            this.document(true); // always needs to take place, to allow doctype assignment
+                        // When an iframe element is attached to the AOMI object, bind a handler function to the iframe's native 'load' event
+                        .bind('attach', function(){
+                            var aomi = this;
+                        
+                            this.iframeLoad(function(){
+                                var handler = arguments.callee;
+                                
+                                // If the iframe has properly loaded
+                                if (aomi._okToLoad()){
+                                    aomi
+                                        // Unbind this handler
+                                        .iframeLoad(handler, true)
+                                        
+                                        // Write out the new document
+                                        .document(true)
+                                        
+                                        // Bind the AOMI 'load' handler for the next native 'load' event
+                                        .iframeLoad(function(){
+                                            aomi.trigger('load');
+                                        })
+                                        
+                                        // Trigger events on AOMI object
+                                        .trigger('ready')
+                                        .trigger('load');
+                                    
+                                }
+                                else if (browserDestroysDocumentWhenIframeMoved){
+                                    aomi.reload();
+                                }
+                                // In IE, just replace the iframe element, as a reload would be unable to restore() the contents
+                                else {
+                                    aomi.replace();
+                                }
+                            });
                         });
                     
                     // Setup iframe document caching
@@ -187,6 +206,7 @@
                 return this
                     // Attach the iframe element
                     ._attachElement()
+                    
                     // Init complete
                     .trigger('init');
             },
@@ -218,6 +238,7 @@
             
             // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
             trigger: function(type, data){
+                /*
                 // DEBUG LOGGING
                 var debug = [this.attr('id') + ': *' + type + '*'];
                 if (data){
@@ -226,6 +247,7 @@
                 //debug.push(arguments.callee.caller);
                 _.apply(null, debug);
                 // end DEBUG LOGGING
+                */
                 
                 event.trigger(type + '.' + ns, data, this);
                 return this;
@@ -265,17 +287,10 @@
             
             /*
             Examples:
-            var aomi = $.iframe();
-            aomi(fn);
-            aomi(html);
-            aomi(head, body);
-            
             aomi.history(-1);
             
             aomi.load(0); // index in history
             aomi.load(fn); // initialize? or bind callback for future 'load' events?
-            aomi.load(html); // string, appended to body
-            aomi.load(head, body);
             => aomi.document(head, body); // etc
             
             $.iframe.doctypes = {
@@ -322,7 +337,7 @@
                             .args(true);
                         
                         // Call the ready callback
-                        // TODO: This requires some thought... this re-runs the pass fn, which may execute something that was only intended to be run once, on the first 'ready' callback. That is, the fn constructor arg is not just a simple 'ready' fn.
+                        // TODO: This requires some thought... this re-runs the fn passed as an arg to the constructor. The fn might execute something only intended to be run once, on the first 'ready' callback. That is, the fn constructor arg is not just a simple 'ready' fn.
                         this.args().callback.call(this);
                     }
                     this.trigger('document', applyCachedArgs);
@@ -442,19 +457,20 @@
                 return this.trigger('reload', !!extreme);
             },
             
-            // Duplicate this AOMI object - TODO: should args() be able to return as an array, so we can do an apply() on $.iframe?
-            duplicate: function(){
+            // Duplicate this AOMI object. This will essentially clone the iframe element, its document and all its settings, provided that they have only been manipulated via the AOMI API - e.g. by passing a function to the original constructor
+            // TODO: should args() be able to return as an array, so we can do an apply() on $.iframe?
+            clone: function(){
                 var args = this.args();
                 return $.iframe(args.headContents, args.bodyContents, args.options, args.callback);
             },
             
             // Replace the iframe element with the iframe element from a replica AOMI object
             replace: function(){
-                var newIframe = this.duplicate();
+                var newIframe = this.clone();
                 
                 this.replaceWith(newIframe);
                 this[0] = newIframe[0];
-                return this;
+                return this.trigger('replace');
             },
             
             // Trigger a repaint of the iframe - e.g. for external iframes in IE6, where the contents aren't always shown at first
@@ -594,7 +610,7 @@
                     this.repaint();
                 }
                 if (!this.hasBlankSrc()){ // external iframes sometimes mess up their contents.
-                // TODO: 1) Should this use hasExternalDocument() instead? 2) This doesn't need the call to repaint() above as well 3) Did this only become necessary because the check for okToLoad in iframeLoad() is now before, and not after, the document has been open()'ed and close()'d?
+                // TODO: 1) Should this use hasExternalDocument() instead? 2) This doesn't need the call to repaint() above as well
                     this.reload();
                 }
                 return this.trigger('appendTo');
@@ -705,42 +721,10 @@
                     .attr(options.attr)
                     .attr('src', options.src);
                 
-                // TODO: Should we on first native load then do document(true), and then on first 'document' event trigger ready? e.g. to stop infinite ready in ie
-                
                 return this
                     // iframe document and contents: apply options
                     .options(true)
-                    
-                    // Bind 'ready' & 'load' handlers to the iframe's native 'load' event
-                    .iframeLoad(
-                        function(){
-                            var readyTrigger = arguments.callee; // NOTE: instead of using arguments.callee, the anonymous function was previously named 'readyTrigger', but using that name fails in IE
-                            
-                            if (aomi._okToLoad()){
-                                // TODO: Does okToLoad need to be tested after document(args) is called?
-                                // If the iframe has properly loaded
-                                aomi
-                                    // unbind this handler
-                                    .iframeLoad(readyTrigger, true)
-                                    // bind the 'load' handler for next time
-                                    .iframeLoad(function(){
-                                        aomi.trigger('load');
-                                    })
-                                    // trigger events on AOMI object
-                                    .trigger('ready')
-                                    .trigger('load');
-                            }
-                            // There's a problem with the iframe, so reload it (except in IE)
-                            // TODO: Add a counter and prevent infinite reloading
-                            else if (browserDestroysDocumentWhenIframeMoved){
-                                aomi.reload();
-                            }
-                            // In IE, just replace the iframe element, as a reload would be unable to restore() the contents
-                            else {
-                                aomi.replace();
-                            }
-                        }
-                    );
+                    .trigger('attach');
             },
             
             _windowObj: function(){
