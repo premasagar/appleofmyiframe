@@ -322,7 +322,8 @@
                                     $(this).attr('target', options.target);
                                 }
                             });
-                        // Call the ready callback - TODO: Should this really be done?
+                        // Call the ready callback
+                        // TODO: This requires thought... this re-runs the pass fn, which may execute something that was only intended to be run once, on the first 'ready' callback. That is, the fn constructor arg is not just a simple 'ready' fn.
                         args.callback.call(this);
                     }
                     this.trigger('document', applyCachedArgs);
@@ -642,9 +643,16 @@
                     delete this._cachedNodes; 
                     this.reload(true);
                 }
+                // Re-apply the document title
+                // NOTE: We shouldn't need to re-apply any of the other options, such as CSS on the iframe element
                 else {
-                    // Apply cached options
-                    this.options(true);
+                    this.title(true);
+                    
+                    // TODO: TEMP HACK: why is this suddenly needed? The problem: in FF3.5 and WebKit, when the iframe element is moved in the DOM, the margin around the body contents is somehow not rendered as it should be. Not sure if there are problems with other CSS props.
+                    this.body().contents().each(function(){
+                        var el = $(this);
+                        el.css('margin', el.css('marginTop') + ' ' + el.css('marginRight') + ' ' + el.css('marginBottom') + ' ' + el.css('marginLeft'));
+                    });
                 }
                 
                 return this.trigger('restore', appendMethod);
