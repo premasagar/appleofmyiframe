@@ -72,8 +72,8 @@
         browser = $.browser,
         msie = browser.msie,
         ie6 = (msie && win.parseInt(browser.version, 10) === 6),
-        opera = browser.opera,
         /*
+        opera = browser.opera,
         browserNeedsDocumentPreparing = (function(){
             return !msie && !opera;
         }()),
@@ -288,8 +288,7 @@
             document: function(){
                 var
                     args = $.makeArray(arguments),
-                    options, applyCachedArgs,
-                    doc;
+                    applyCachedArgs, doc;
                 
                 try {
                     doc = this.window().attr('document');
@@ -441,6 +440,21 @@
                     this.document(true);
                 }
                 return this.trigger('reload', !!extreme);
+            },
+            
+            // Duplicate this AOMI object - TODO: should args() be able to return as an array, so we can do an apply() on $.iframe?
+            duplicate: function(){
+                var args = this.args();
+                return $.iframe(args.headContents, args.bodyContents, args.options, args.callback);
+            },
+            
+            // Replace the iframe element with the iframe element from a replica AOMI object
+            replace: function(){
+                var newIframe = this.duplicate();
+                
+                this.replaceWith(newIframe);
+                this[0] = newIframe[0];
+                return this;
             },
             
             // Trigger a repaint of the iframe - e.g. for external iframes in IE6, where the contents aren't always shown at first
@@ -716,10 +730,14 @@
                                     .trigger('ready')
                                     .trigger('load');
                             }
-                            else {
-                                // There's a problem with the iframe, so reload it
-                                // TODO: Add a counter and prevent infinite reloading
+                            // There's a problem with the iframe, so reload it (except in IE)
+                            // TODO: Add a counter and prevent infinite reloading
+                            else if (browserDestroysDocumentWhenIframeMoved){
                                 aomi.reload();
+                            }
+                            // In IE, just replace the iframe element, as a reload would be unable to restore() the contents
+                            else {
+                                aomi.replace();
                             }
                         }
                     );
