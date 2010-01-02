@@ -51,9 +51,7 @@
     function JqueryClass(proto){
         return $.extend(
             function(){
-                if (this.initialize){
-                    this.initialize.apply(this, arguments);
-                }
+                this.init.apply(this, arguments);
             },
             {
                 // deep clone of jQuery prototype and passed prototype
@@ -107,7 +105,7 @@
                 
         // Main class
         AppleOfMyIframe = new JqueryClass({
-            initialize: function(){
+            init: function(){
                 var 
                     // Cache the constructor arguments, to enable later reloading
                     args = this.args($.makeArray(arguments))
@@ -290,7 +288,7 @@
             aomi.history(-1);
             
             aomi.load(0); // index in history
-            aomi.load(fn); // initialize? or bind callback for future 'load' events?
+            aomi.load(fn); // init? or bind callback for future 'load' events?
             => aomi.document(head, body); // etc
             
             $.iframe.doctypes = {
