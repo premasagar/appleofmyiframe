@@ -1,17 +1,4 @@
 <!DOCTYPE html>
-<!--
-    TODO: research into what triggers an iframe's native 'load' event in different browsers, when:
-        * iframe is created and appended to DOM
-        * doc.open() is called
-        * doc.write() is called
-        * doc.close() is called
-        * doctype is written
-        * iframe src is changed
-        * iframe src attribute is written as it already is
-        * moving iframe element in the DOM
-        * moving parent of iframe element in the DOM
-        * iframe element display:none => display:block
--->
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -117,7 +104,7 @@
       <div id="controls">
         <ol>
             <li><button id="move-iframes">Move iframes in DOM</button></li>
-            <li><button id="reload-page">Reload host window</button></li>
+            <li><button id="reload-page">Reload host window</button></li> <!-- NOTE: Also test pressing the browser's own reload button -->
             <li><button id="repaint-iframes">Repaint iframes</button>
             <li><button id="reload-iframes">Reload iframes</button>
             <li><button id="reload-iframes-extreme">Reload iframes (extreme)</button>
