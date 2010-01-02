@@ -73,9 +73,11 @@
         msie = browser.msie,
         ie6 = (msie && win.parseInt(browser.version, 10) === 6),
         opera = browser.opera,
+        /*
         browserNeedsDocumentPreparing = (function(){
             return !msie && !opera;
         }()),
+        */
         browserDestroysDocumentWhenIframeMoved = (function(){
             return !msie;
         }()),
@@ -140,7 +142,7 @@
                             }
                             */
                             this.document(true); // always needs to take place, to allow doctype assignment
-                    });
+                        });
                     
                     // Setup iframe document caching
                     // Ridiculously, each time the iframe element is moved, or removed and re-inserted into the DOM, then the native onload event fires and the iframe's document is discarded. (This doesn't happen in IE, thought). So we need to bring back the contents from the discarded document, by caching it and restoring from the cache on each 'load' event.
@@ -285,13 +287,19 @@
             
             document: function(){
                 var
-                    doc = this.window().attr('document'),
                     args = $.makeArray(arguments),
-                    options, applyCachedArgs;
+                    options, applyCachedArgs,
+                    doc;
+                
+                try {
+                    doc = this.window().attr('document');
+                }
+                catch(e){}
                 
                 if (!args.length){
                     return $(doc || []);
                 }
+                
                 if (args[0] === true){
                     applyCachedArgs = true;
                 }
@@ -309,22 +317,14 @@
                     doc.close();
                     
                     // Re-apply cached options & args, e.g. when preparing a new iframe document
-                    if (applyCachedArgs){
-                        args = this.args();
-                        options = this.options();
-                                                
+                    if (applyCachedArgs){    
                         this
                             ._trim()
-                            .args(true)
-                            // Let anchor links open pages in the default target
-                            .live('a', 'click', function(){
-                                if (!$(this).attr('target') && $(this).attr('href')){
-                                    $(this).attr('target', options.target);
-                                }
-                            });
+                            .args(true);
+                        
                         // Call the ready callback
-                        // TODO: This requires thought... this re-runs the pass fn, which may execute something that was only intended to be run once, on the first 'ready' callback. That is, the fn constructor arg is not just a simple 'ready' fn.
-                        args.callback.call(this);
+                        // TODO: This requires some thought... this re-runs the pass fn, which may execute something that was only intended to be run once, on the first 'ready' callback. That is, the fn constructor arg is not just a simple 'ready' fn.
+                        this.args().callback.call(this);
                     }
                     this.trigger('document', applyCachedArgs);
                 }
@@ -413,10 +413,7 @@
                                 if (!$(this).attr('target') && $(this).attr('href')){
                                     $(this).attr('target', options.target);
                                 }
-                            })
-                            // iframe element manipulation
-                            .css(options.css)
-                            .attr(options.attr);
+                            });
                     }
                     return this;
                 }
@@ -434,13 +431,13 @@
             
             reload: function(extreme){
                 // 'soft reload': re-apply src attribute
-                if (!extreme || !this.hasBlankSrc()){
+                // NOTE: browserDestroysDocumentWhenIframeMoved is included here, as only those browsers will have a 'soft' reload trigger the restore() method. Other browsers (that is, IE), should instead perform a hard reload
+                if ((!extreme && browserDestroysDocumentWhenIframeMoved) || !this.hasBlankSrc()){
                     this.attr('src', this.attr('src'));
-                    // TODO: Should this also call document('')?, as it seems in Opera 10.10 to require doc.open().write().close() in order for body to have node. But then, that would trigger a new 'load' event.
                 }
                 // 'hard reload': re-apply original constructor args
                 else {
-                    this.trigger('extremereloadstart', !!extreme);
+                    this.trigger('extremereloadstart');
                     this.document(true);
                 }
                 return this.trigger('reload', !!extreme);
@@ -470,13 +467,16 @@
                 var
                     win = this.window(),
                     loc = win.attr('location');
-                
-                return loc ?
-                    loc.href : ( // location href is available, so iframe is in the DOM and is in the same domain
-                        this._windowObj() ?
-                            null : // iframe is in the DOM, but has a cross-domain document
-                            this.attr('src') // iframe is out of the DOM, so its window doesn't exist and it has no location, return iframe element src
-                    );
+                    
+                if (loc){
+                    try {
+                        return loc.href; // location href is available, so iframe is in the DOM and is in the same domain
+                    }
+                    catch(e){}
+                }
+                return this._windowObj() ?
+                    null : // iframe is in the DOM, but has a cross-domain document
+                    this.attr('src'); // iframe is out of the DOM, so its window doesn't exist and it has no location, return iframe
             },
             
             contents: function(headContents, bodyContents, emptyFirst){
@@ -661,27 +661,49 @@
             // Advised not to use this API method externally
             // Proxy for iframe's native load event, with free jQuery event handling
             iframeLoad: function(callback, unbind){
-                $(this[0])
-                    [unbind ? 'unbind' : 'bind']
-                    ('load', callback);
+                var aomi = this;
+                
+                if (!unbind){
+                    $(this[0]).bind('load', callback);
+                    
+                    // Prevent IE having permission denied error, when relying on jQuery's built-in unload event handler removal
+                    $(window).unload(function(){
+                        aomi.iframeLoad(callback, true);
+                    });
+                }
+                else {
+                    $(this[0]).unbind('load', callback);
+                }
                 return this;
             },
             
             _attachElement: function(){
-                var aomi = this;
+                var
+                    aomi = this,
+                    options = this.options();
+                
                 // Absorb a jQuery-wrapped iframe element into the AOMI object
                 $.fn.init.call(this, '<iframe></iframe>');
-                this.attr('src', this.options().src);
                 
-                // Bind 'ready' & 'load' handlers to the iframe's native 'onload' event
+                // iframe element manipulation: apply attributes and styling
+                this
+                    .css(options.css)
+                    .attr(options.attr)
+                    .attr('src', options.src);
+                
+                // TODO: Should we on first native load then do document(true), and then on first 'document' event trigger ready? e.g. to stop infinite ready in ie
+                
                 return this
-                    // Apply attributes, styling and contents
+                    // iframe document and contents: apply options
                     .options(true)
-                    // Set a handler for the native iframe 'load' event
+                    
+                    // Bind 'ready' & 'load' handlers to the iframe's native 'load' event
                     .iframeLoad(
-                        function readyTrigger(){
+                        function(){
+                            var readyTrigger = arguments.callee; // NOTE: instead of using arguments.callee, the anonymous function was previously named 'readyTrigger', but using that name fails in IE
+                            
                             if (aomi._okToLoad()){
-                            // TODO: Does okToLoad need to be tested after document(args) is called?
+                                // TODO: Does okToLoad need to be tested after document(args) is called?
                                 // If the iframe has properly loaded
                                 aomi
                                     // unbind this handler
@@ -704,7 +726,12 @@
             },
             
             _windowObj: function(){
-                return this[0].contentWindow;
+                try { // Can cause "unspecified error" in IE if the window's not yet ready
+                    return this[0].contentWindow;
+                }
+                catch(e){
+                    return false;
+                }
             },
             
             _appendWith: function(doc, method, parentNode, childNodes){
