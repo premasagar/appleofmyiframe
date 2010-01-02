@@ -151,14 +151,16 @@
                                 fromReload = true;
                             })
                             .load(function(ev){
-                                // Restore from cached nodes
-                                if (!fromReload){
-                                    this.cache();
-                                }
-                                // If an extreme reload, then don't restore from cached nodes - a) because the original constructor args are used, b) because probably the browser doesn't support adoptNode, etc, so we'll end up reloading again anyway during cache(), leading to an infinite loop
-                                else {
+                                // If an extreme reload, then don't restore from cached nodes - a) because the original constructor args are used, b) because probably the browser doesn't support adoptNode, etc, so we'll end up reloading again anyway during cache(), leading to an infinite loop          
+                                if (fromReload){
                                     fromReload = false;
                                 }
+                                // Restore from cached nodes. Not restored if the body already has contents.
+                                // TODO: Could it be problematic to not restore when there is already body contents? Should we check for head contents too?
+                                else if (!this.body().children().length){
+                                    this.restore();
+                                }
+                                this.cache();
                             });
                     }
                     // Setup auto-resize event listeners
@@ -366,9 +368,10 @@
                         // apply cached options and constructor arguments; prepare a new iframe document
                         aomi
                             .options(true)
-                            .contents(args.headContents, args.bodyContents, true)
-                            // Call the ready callback - TODO: Should this really be done?
-                            .args().callback.call(aomi);
+                            .contents(argsCache.headContents, argsCache.bodyContents, true);
+                        // Call the ready callback - TODO: Should this really be done?
+                        argsCache.callback.call(aomi);
+                        return false; // exit $.each loop
                     }                   
                     if (!found.callback && $.isFunction(arg)){
                         found.callback = arg;
@@ -550,13 +553,13 @@
                     width, height, htmlElement;
                                     
                 if (bodyChildren.length){
-                    width = bodyChildren.width();
-                    height = bodyChildren.height();
+                    width = bodyChildren.outerWidth(true);
+                    height = bodyChildren.outerHeight(true);
                 }
                 else {
                     htmlElement = this.$('html');
-                    width = htmlElement.width();
-                    height = htmlElement.height();
+                    width = htmlElement.outerWidth(true);
+                    height = htmlElement.outerHeight(true);
                 }
                 
                 if (matchWidth !== false){
@@ -599,24 +602,11 @@
                 return !src || src === 'about:blank';
             },
             
-            cache: function(){
-	            var
-	                doc = this.$()[0],
-	                // Check if there's already cached head and body elements
-	                cachedNodes = this._cachedNodes;
-	                
+            cache: function(){	            
 	            // iframe is not in the DOM
-	            if (!doc){
+	            if (!this.$()[0]){
 	                return this;
 	            }
-	            
-                // The iframe is restored from cached nodes, every 'load' event after the first one. Not restored if the body already has contents.
-                // TODO: Could it be problematic to not restore when there is already body contents? If so, should we have a 'force' boolean argument?
-	            if (cachedNodes && !this.body().children().length){
-                    this.restore();
-	            }
-	            
-                // TODO: Fix incomplete images in WebKit. The problem: when a document is dropped while images in the document are still loading, then when the nodes are copied over to the new document, the image does not continue to load, and remains blank. The solution: a method that re-applies the src attribute of images, after adding them to the new document. Possibly check the image's 'complete' property, and only if it is not complete, then re-apply the src attribute. Need to verify if there is a performance impact of re-applying the src of an image that has already been cached.
 	            
 	            // Update the cached nodes
 	            this._cachedNodes = this.head().add(this.body());
@@ -631,9 +621,9 @@
                     appendMethod = $.iframe.appendMethod,
 	                htmlElement = this.$('html').empty(),
                     doc = this.$()[0],
-	                cachedNodes;
+	                cachedNodes = this._cachedNodes;
 	                
-	            if (!doc){
+	            if (!doc || !cachedNodes){
 	                return this;
 	            }
 	            
@@ -656,6 +646,7 @@
                     // Apply cached options
                     this.options(true);
                 }
+                
                 return this.trigger('restore', appendMethod);
             },
             
