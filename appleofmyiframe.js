@@ -25,7 +25,7 @@
         Jonathan Lister - http://jaybyjayfresh.com
     
     
-    ~2KB minified & gzipped
+    ~2.9KB minified & gzipped
 
 */
 
@@ -706,9 +706,7 @@
             },
             
             _attachElement: function(){
-                var
-                    aomi = this,
-                    options = this.options();
+                var options = this.options();
                 
                 // Absorb a jQuery-wrapped iframe element into the AOMI object
                 $.fn.init.call(this, '<iframe></iframe>');
