@@ -1,4 +1,14 @@
 <!DOCTYPE html>
+<!--
+    TODO: research into what triggers an iframe's native 'load' event in different browsers, when:
+        * iframe is created and appended to DOM
+        * doc.open() is called
+        * doc.write() is called
+        * doc.close() is called
+        * doctype is written
+        * iframe src is changed
+        * iframe src attribute is written as it already is
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -13,16 +23,22 @@
         padding:0.2em 0.5em;
         margin:0;
     }
+    h1, h2, h3 {
+        color:#A6C664;
+    }
     h1 {
-        font-size:1.62em;
+        font-size:1em;
+        font-weight:bold;
         padding:0;
         margin:0;
     }
     button {
-        font-size:1em;
         padding:0.16em;
         display:block;
-        margin:0 0.38em 0.38em 0;
+    }
+    dt {
+        font-weight:bold;
+        margin-top:1em;
     }
     .stealth {
         position: absolute;
@@ -32,17 +48,33 @@
         top:0;
         left:0;
     }
-    #tests, #reports {
+    #tests {
+        position:fixed;
+        top:0;
+        right:0;
+        background-color:#A6C664;
+        color:#fff;
+        padding:0.16em 0.16em 0.38em;
+    }
+    #tests h2, #tests p, #tests #controls, #tests ol, #tests li {
+        padding:0;
+        margin:0 0.62em 0;
+        color:#fff;
+    }
+    #tests li {
+        font-size:0.62em;
+        margin:0.38em;
+    }
+    #tests .desc {
+        font-size:1em;
+        clear:left;
+        padding:0 0 0.38em 0.38em;
+    }
+    #reports {
         float:left;
         margin:0 6.85em 2.62em 0;
         padding-bottom:1.62em;
         border-bottom:1px solid #ccc;
-    }
-    #tests .desc {
-        font-size:1em;
-    }
-    #reports dt {
-        margin-top:1em;
     }
     .stage {
         float:left;
@@ -53,14 +85,18 @@
     }
     #stage1 {
         clear:both;
-        color:#336;
         background-color:#fff;
         border-color:#336;
     }
     #stage2 {
         background-color:#336;
-        color:#ccf;
         border-color:#ccf;
+    }
+    #stage1 h2 {
+        color:#336;
+    }
+    #stage2 h2 {
+        color:#ccf;
     }
     iframe {
         display:block;
@@ -93,7 +129,7 @@
         <dt>Browser</dt>
         <dd id="browser"><textarea class="user-agent" rows="3" cols="42"></textarea></dd>
     
-        <dt>Append method:</dt>
+        <dt>Append method</dt>
         <dd id="append-method"></dd>
     </dl>
   </div>

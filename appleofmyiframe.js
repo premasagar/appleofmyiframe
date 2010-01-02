@@ -32,7 +32,7 @@
 'use strict';
 
 (function($){
-
+    // Anon and on
     function isUrl(str){
         return (/^https?:\/\/[\-\w]+\.\w[\-\w]+\S*$/).test(str);
     }
@@ -112,13 +112,12 @@
         // Main class
         AppleOfMyIframe = new JqueryClass({
             initialize: function(){
-                var args, options, attr, fromReload;
-                
-                // Cache the constructor arguments, to enable later reloading
-                this.args.apply(this, arguments);
-                args = this.args(); // retrieve the sorted arguments
-                options = this.options();
-                attr = options.attr;
+                var 
+                    // Cache the constructor arguments, to enable later reloading
+                    args = this.args($.makeArray(arguments))
+                        .args(), // retrieve the sorted arguments
+                    options = this.options(),
+                    fromReload;
                 
                 // If a url supplied, add it as the iframe src, to load the page
                 if (isUrl(args.bodyContents)){
@@ -128,17 +127,19 @@
                     if (browserRequiresRepaintForExternalIframes){
                         this.ready(this.repaint);
                     }
-                }
-                                
+                }   
                 // If an injected iframe (i.e. without a document url set as the src)
                 else if (args.bodyContents || args.headContents){
                     this
                         // When the iframe is ready, prepare the document and its contents
                         .ready(function(){
                             // Prepare the iframe document
+                            /*
                             if (browserNeedsDocumentPreparing){
                                 this.document(true);
                             }
+                            */
+                            this.document(true); // always needs to take place, to allow doctype assignment
                     });
                     
                     // Setup iframe document caching
@@ -280,35 +281,62 @@
             aomi.doctype('html5') === $.iframe.doctypes['html5'];
             */
             
-            document: function(useCachedArgs){
+            document: function(){
                 var
                     doc = this.window().attr('document'),
-                    args, options;
+                    args = $.makeArray(arguments),
+                    options, applyCachedArgs;
                 
-                if (!arguments.length){
+                if (!args.length){
                     return $(doc || []);
                 }
+                if (args[0] === true){
+                    applyCachedArgs = true;
+                }
+                else {
+                    // Cache supplied args
+                    this.args(args);
+                }
+                // Doc is ready for manipulation
                 if (doc){
-                    if (useCachedArgs === true){
-                        this._populate();
+                    doc.open();
+                    doc.write(
+                        this.doctype() + '\n' +
+                        '<head></head><body></body>'                    
+                    );
+                    doc.close();
+                    
+                    // Re-apply cached options & args, e.g. when preparing a new iframe document
+                    if (applyCachedArgs){
+                        args = this.args();
+                        options = this.options();
+                                                
+                        this
+                            ._trim()
+                            .args(true)
+                            // Let anchor links open pages in the default target
+                            .live('a', 'click', function(){
+                                if (!$(this).attr('target') && $(this).attr('href')){
+                                    $(this).attr('target', options.target);
+                                }
+                            });
+                        // Call the ready callback - TODO: Should this really be done?
+                        args.callback.call(this);
                     }
-                    else {
-                        // Cache supplied args
-                        this.args.apply(this, arguments);
-                        doc.open();
-                        doc.write(
-                            this.doctype() + '\n' +
-                            '<head></head><body></body>'                    
-                        );
-                        doc.close();
-                    }
+                    this.trigger('document', applyCachedArgs);
+                }
+                // Doc not ready, so apply arguments at next load event
+                else {
+                    this.one('load', function(){
+                        this.document(true);
+                    });
                 }
                 return this;
             },
-
             
             args: function(){
                 var
+                    aomi = this,
                     args = $.makeArray(arguments),
                     found = {},
                     argsCache;
@@ -326,8 +354,22 @@
                 if (!args.length){
                     return argsCache;
                 }
+                
+                // An array of args was passed. Re-apply as arguments to this function.
+                if ($.isArray(args[0])){
+                    return this.args.apply(this, args[0]);
+                }
+                
                 // All arguments are optional. Determine which were supplied.
                 $.each(args.reverse(), function(i, arg){
+                    if (arg === true){
+                        // apply cached options and constructor arguments; prepare a new iframe document
+                        aomi
+                            .options(true)
+                            .contents(args.headContents, args.bodyContents, true)
+                            // Call the ready callback - TODO: Should this really be done?
+                            .args().callback.call(aomi);
+                    }                   
                     if (!found.callback && $.isFunction(arg)){
                         found.callback = arg;
                     }
@@ -348,10 +390,35 @@
             },
             
             options: function(newOptions){
-                return newOptions ?
-                    this.args(newOptions) :
-                    this.args().options;
-            },
+                var args, options;
+                
+                if (newOptions){
+                    if (typeof newOptions === 'object'){
+                        this.args(newOptions);
+                    }
+                    else if (newOptions === true){
+                        args = this.args();
+                        options = this.options();
+                        
+                        this
+                            // Re-apply cached title
+                            .title(true)
+                            
+                            // Let anchor links open pages in the default target
+                            .live('a', 'click', function(){
+                                if (!$(this).attr('target') && $(this).attr('href')){
+                                    $(this).attr('target', options.target);
+                                }
+                            })
+                            // iframe element manipulation
+                            .css(options.css)
+                            .attr(options.attr);
+                    }
+                    return this;
+                }
+                // !newOptions
+                return this.args().options;
+            },                
             
             load: function(callback){
                 return this.bind('load', callback);
@@ -362,11 +429,10 @@
             },
             
             reload: function(extreme){
-                var doc;
                 // 'soft reload': re-apply src attribute
                 if (!extreme || !this.hasBlankSrc()){
                     this.attr('src', this.attr('src'));
-                    // TODO: Should this also call document(true)?, as it seems in Opera 10.10 to require doc.open().write().close() in order for body to have node. But then, that would trigger a new 'load' event.
+                    // TODO: Should this also call document('')?, as it seems in Opera 10.10 to require doc.open().write().close() in order for body to have node. But then, that would trigger a new 'load' event.
                 }
                 // 'hard reload': re-apply original constructor args
                 else {
@@ -462,8 +528,11 @@
             },
             
             title: function(title){
+                if (title === true){
+                    return this.title(this.options().title);
+                }
                 if (typeof title !== 'undefined'){
-                    this.options.title = title;
+                    this.options().title = title;
                     this.$().attr('title', title);
                     return this;
                 }
@@ -477,7 +546,6 @@
             // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
             resize: function(matchWidth, matchHeight){
                 var
-                    args = arguments,
                     bodyChildren = this.body().children(),
                     width, height, htmlElement;
                                     
@@ -531,13 +599,11 @@
                 return !src || src === 'about:blank';
             },
             
-            // TODO: Separate functionality into .cache() and .restore()
             cache: function(){
 	            var
 	                doc = this.$()[0],
 	                // Check if there's already cached head and body elements
-	                cachedNodes = this._cachedNodes,
-	                appendMethod, methodsToTry, htmlElement;
+	                cachedNodes = this._cachedNodes;
 	                
 	            // iframe is not in the DOM
 	            if (!doc){
@@ -547,29 +613,7 @@
                 // The iframe is restored from cached nodes, every 'load' event after the first one. Not restored if the body already has contents.
                 // TODO: Could it be problematic to not restore when there is already body contents? If so, should we have a 'force' boolean argument?
 	            if (cachedNodes && !this.body().children().length){
-                    // Methods to try, in order. If all fail, then the iframe will re-initialize.
-                    methodsToTry = ['adoptNode', 'appendChild', 'importNode', 'cloneNode'];
-                    appendMethod = $.iframe.appendMethod;
-		            htmlElement = this.$('html').empty();
-                    
-                    // If we don't yet know the append method to use, then cycle through the different options. This only needs to be determined the first time an iframe is moved in the DOM, and only once per page view.
-                    if (!appendMethod) {
-                        appendMethod = this._findAppendMethod(doc, methodsToTry, htmlElement, cachedNodes) || 'reload';
-                        $.iframe.appendMethod = appendMethod;
-                    }
-                    // If we've already determined the method to use, then use it
-                    else if (appendMethod !== 'reload'){
-                        this._appendWith(doc, appendMethod, htmlElement, cachedNodes);
-                    }
-                    // If the standard append methods don't work, then reload the iframe, using the original constructor arguments.
-                    if (appendMethod === 'reload'){
-                        // Remove the cached nodes, to prevent the reload triggering a new 'load' event, and another call to cache() => infinite loop
-                        delete this._cachedNodes; 
-                        this.reload(true);
-                    }
-                    this
-                        .title(this.options.title)
-                        .trigger('restore', appendMethod);
+                    this.restore();
 	            }
 	            
                 // TODO: Fix incomplete images in WebKit. The problem: when a document is dropped while images in the document are still loading, then when the nodes are copied over to the new document, the image does not continue to load, and remains blank. The solution: a method that re-applies the src attribute of images, after adding them to the new document. Possibly check the image's 'complete' property, and only if it is not complete, then re-apply the src attribute. Need to verify if there is a performance impact of re-applying the src of an image that has already been cached.
@@ -580,35 +624,47 @@
 	            return this;
             },
             
+            restore: function(){
+                // Methods to try, in order. If all fail, then the iframe will re-initialize.
+                var
+                    methodsToTry = ['adoptNode', 'appendChild', 'importNode', 'cloneNode'],
+                    appendMethod = $.iframe.appendMethod,
+	                htmlElement = this.$('html').empty(),
+                    doc = this.$()[0],
+	                cachedNodes;
+	                
+	            if (!doc){
+	                return this;
+	            }
+	            
+                // If we don't yet know the append method to use, then cycle through the different options. This only needs to be determined the first time an iframe is moved in the DOM, and only once per page view.
+                if (!appendMethod){
+                    appendMethod = this._findAppendMethod(doc, methodsToTry, htmlElement, cachedNodes) || 'reload';
+                    $.iframe.appendMethod = appendMethod;
+                }
+                // If we've already determined the method to use, then use it
+                else if (appendMethod !== 'reload'){
+                    this._appendWith(doc, appendMethod, htmlElement, cachedNodes);
+                }
+                // If the standard append methods don't work, then reload the iframe, using the original constructor arguments.
+                if (appendMethod === 'reload'){
+                    // Remove the cached nodes, to prevent the reload triggering a new 'load' event => call to cache() => infinite loop
+                    delete this._cachedNodes; 
+                    this.reload(true);
+                }
+                else {
+                    // Apply cached options
+                    this.options(true);
+                }
+                return this.trigger('restore', appendMethod);
+            },
+            
             // Advised not to use this API method externally
             // Proxy for iframe's native load event, with free jQuery event handling
             iframeLoad: function(callback, unbind){
-                var aomi = this;
                 $(this[0])
                     [unbind ? 'unbind' : 'bind']
                     ('load', callback);
-                return this;
-            },
-            
-            _populate: function(){
-                var
-                    args = this.args(),
-                    options = this.options();
-                this
-                    .css(options.css)
-                    .attr(options.attr); // NOTE: these are in a separate block as they return the jQuery-wrapped iframe, and not the AOMI object - similar to other places in the code
-                this
-                    ._trim()
-                    .title(options.title)
-                    .contents(args.headContents, args.bodyContents, true)
-                    // Let anchor links open pages in the default target
-                    .live('a', 'click', function(){
-                        if (!$(this).attr('target') && $(this).attr('href')){
-                            $(this).attr('target', options.target);
-                        }
-                    });
-                // Call the ready callback - TODO: Should this be done?
-                args.callback.call(this);
                 return this;
             },
             
@@ -621,7 +677,7 @@
                 // Bind 'ready' & 'load' handlers to the iframe's native 'onload' event
                 return this
                     // Apply attributes, styling and contents
-                    ._populate()
+                    .options(true)
                     // Set a handler for the native iframe 'load' event
                     .iframeLoad(
                         function readyTrigger(){
