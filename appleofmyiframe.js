@@ -126,7 +126,7 @@
                 else if (args.bodyContents || args.headContents){
                     this
                         // When an iframe element is attached to the AOMI object, bind a handler function to the iframe's native 'load' event
-                        .bind('attach', function(){
+                        .bind('attachElement', function(){
                             var aomi = this;
                         
                             this.iframeLoad(function(){
@@ -720,7 +720,7 @@
                 return this
                     // iframe document and contents: apply options
                     .options(true)
-                    .trigger('attach');
+                    .trigger('attachElement');
             },
             
             _windowObj: function(){
