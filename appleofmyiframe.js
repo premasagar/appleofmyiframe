@@ -1,4 +1,4 @@
-        /*!
+/*!
 * AppleOfMyIframe
 *     v0.9
 **
@@ -25,7 +25,7 @@
         Jonathan Lister - http://jaybyjayfresh.com
     
     
-    ~2.9KB minified & gzipped
+    ~2.7KB minified & gzipped
 
 */
 
