@@ -13,7 +13,7 @@
 
 *//*
 
-    requires jQuery
+    requires jQuery (so far only tested with jQuery v1.3.2)
     adds methods:
         jQuery.iframe()
         jQuery(elem).intoIframe()
