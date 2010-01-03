@@ -1,6 +1,6 @@
 /*!
 * AppleOfMyIframe
-*     v0.9
+*     v0.95
 **
     JavaScript library for creating & manipulating iframe documents on-the-fly
     http://github.com/premasagar/appleofmyiframe
