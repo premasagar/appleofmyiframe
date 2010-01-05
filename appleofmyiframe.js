@@ -757,58 +757,70 @@
                 }
             },
             
+            // Add modified jQuery methods to the prototype
             (function(){
-                function manipulateIframe(method){
-                    return function(){
-                        $.fn[method].apply(this, arguments);
-                        // TODO: If we group together manipulation events, the repaint call can be passed as an event listener to those manip events.
-                        if (browserRequiresRepaintForExternalIframes && this.hasExternalDocument()){
-                            this.repaint();
+                var
+                    jQueryMethods = [
+                        {
+                            // Methods to manipulate the iframe element
+                            fn: [
+                                'appendTo',
+                                'prependTo',
+                                'insertBefore',
+                                'insertAfter',
+                                'replaceAll'
+                            ],
+                            
+                            wrapper: function(method){
+                                return function(){
+                                    $.fn[method].apply(this, arguments);
+                                    // Work around browser rendering quirks
+                                    if (!this.hasBlankSrc()){
+                                        this.reload();
+                                    }
+                                    return this.trigger(method);
+                                };
+                            }
+                        },
+                        
+                        {
+                            // Methods to manipulate the iframe's body contents
+                            fn: [
+                                'append',
+                                'prepend',
+                                'html',
+                                'text',
+                                'wrapInner'
+                            ],
+                            
+                            wrapper: function(method){
+                                return function(){
+                                    $.fn[method].apply(this.body(), arguments);
+                                    // TODO: Ideally, we'd autoresize the iframe any time that its content is manipulated, e.g. via DOM mutation events on the contents
+                                    if (this.options().autoresize){
+                                        this.resize();
+                                    }
+                                    return this.trigger(method);
+                                };
+                            }
                         }
-                        if (!this.hasBlankSrc()){ // external iframes sometimes mess up their contents.
-                        // TODO: 1) Should this use hasExternalDocument() instead? 2) This doesn't need the call to repaint() above as well
-                            this.reload();
-                        }
-                        return this.trigger(method);
-                    };
-                }
-                function manipulateBody(method){
-                    return function(){
-                        $.fn[method].apply(this.body(), arguments);
-                        if (this.options().autoresize){ // TODO: Ideally, whenever content is manipulated inside the iframe's body, then it would be good to matchSize() at that point, e.g. by using the DOM mutation event on the body contents...
-                            this.resize();
-                        }
-                        return this.trigger(method);
-                    };
-                }
+                    ],
+                    methodsForPrototype = {};
                 
-                var methods = {};
                 $.each(
-                    [
-                        'appendTo',
-                        'prependTo',
-                        'insertBefore',
-                        'insertAfter',
-                        'replaceAll'
-                    ],
-                    function(i, method){
-                        methods[method] = manipulateIframe(method);
+                    jQueryMethods,
+                    function(i, jQueryMethod){
+                        var wrapper = jQueryMethod.wrapper;
+                        $.each(
+                            jQueryMethod.fn,
+                            function(j, fn){
+                                methodsForPrototype[fn] = wrapper(fn);
+                            }
+                        );
                     }
                 );
-                $.each(
-                    [
-                        'append',
-                        'prepend',
-                        'html',
-                        'text',
-                        'wrapInner'
-                    ],
-                    function(i, method){
-                        methods[method] = manipulateBody(method);
-                    }
-                );
-                return methods;
-            })()
+                return methodsForPrototype;
+            }())
         ));
         
     
