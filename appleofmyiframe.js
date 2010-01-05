@@ -104,7 +104,7 @@
         },
                 
         // Main class
-        AppleOfMyIframe = new JqueryClass({
+        AppleOfMyIframe = new JqueryClass($.extend({
             init: function(){
                 var 
                     // Cache the constructor arguments, to enable later reloading
@@ -576,20 +576,6 @@
                 }
                 return this.trigger('resize', [width, height]);
             },
-        
-            // TODO: Add similar methods - e.g. prependTo, replaceWith
-            appendTo: function(obj){
-                $.fn.appendTo.call(this, obj);
-                // TODO: If we group together manipulation events, the repaint call can be passed as an event listener to those manip events.
-                if (browserRequiresRepaintForExternalIframes && this.hasExternalDocument()){
-                    this.repaint();
-                }
-                if (!this.hasBlankSrc()){ // external iframes sometimes mess up their contents.
-                // TODO: 1) Should this use hasExternalDocument() instead? 2) This doesn't need the call to repaint() above as well
-                    this.reload();
-                }
-                return this.trigger('appendTo');
-            },
             
             // TODO: Currently, this will return true for an iframe that has a cross-domain src attribute and is not yet in the DOM. We should include a check to compare the domain of the host window with the domain of the iframe window - including checking document.domain property
             isSameDomain: function(){
@@ -768,7 +754,30 @@
                 }
                 return ok;
             }
-        });
+        },
+        
+        (function(){
+            function manipulateIframe(method){
+                return function(){
+                    $.fn[method].apply(this, arguments);
+                    // TODO: If we group together manipulation events, the repaint call can be passed as an event listener to those manip events.
+                    if (browserRequiresRepaintForExternalIframes && this.hasExternalDocument()){
+                        this.repaint();
+                    }
+                    if (!this.hasBlankSrc()){ // external iframes sometimes mess up their contents.
+                    // TODO: 1) Should this use hasExternalDocument() instead? 2) This doesn't need the call to repaint() above as well
+                        this.reload();
+                    }
+                    return this.trigger(method);
+                };
+            }
+            var methods = {};
+            $.each(['appendTo', 'prependTo', 'insertBefore', 'insertAfter', 'replaceAll'], function(i, method){
+                methods[method] = manipulateIframe(method);
+            });
+            return methods;
+        })()
+        ));
         
     
     // Extend jQuery with jQuery.iframe() and jQuery(elem).intoIframe()
