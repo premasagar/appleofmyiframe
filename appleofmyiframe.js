@@ -141,13 +141,11 @@
                                         // Write out the new document
                                         .document(true)
                                         
-                                        // Bind the AOMI 'load' handler for the next native 'load' event
+                                        // Bind an AOMI 'load' handler to the native 'load' event
+                                        // NOTE: We do this after the document is written, because browsers differ in whether they trigger an iframe load event after the doc is written. So, we manually trigger the event for all browsers.
                                         .iframeLoad(function(){
                                             aomi.trigger('load');
-                                        })
-                                        
-                                        // Trigger events on AOMI object
-                                        .trigger('ready')
+                                        })                                        
                                         .trigger('load');
                                     
                                 }
@@ -190,15 +188,6 @@
                             // TODO: How should this be simplified, so that a call to contents() doesn't lead to two calls to resize()? In this function, we could use the 'contents' event, but it makes sense to use 'headContents' and 'bodyContents' for general usage.
                             // TODO: should this use setTimeout of 250ms, to allow rendering time (particularly in Firefox)?
                     }
-                }
-                
-                // If a callback was supplied, fire it on 'ready'
-                if (args.callback){
-                    this.ready(function(){
-                        args.callback.apply(this, arguments);
-                    });
-                    // NOTE: This block used to read "this.ready(callback);", which should be identical. However, WebKit (seen in Chrome 4) doesn't successfully apply manipulations to the iframe head on a reload(true) when the block reads that way. Why? Who knows?
-                    // TODO: Investigate this. Perhaps the bind/unbind/trigger events need changing instead?
                 }
                 
                 return this
@@ -301,7 +290,7 @@
             document: function(){
                 var
                     args = $.makeArray(arguments),
-                    applyCachedArgs, doc;
+                    doc;
                 
                 try {
                     doc = this.window().attr('document');
@@ -311,14 +300,11 @@
                 if (!args.length){
                     return $(doc || []);
                 }
-                
-                if (args[0] === true){
-                    applyCachedArgs = true;
-                }
-                else {
-                    // Cache supplied args
+                // Cache the passed arguments
+                if (args[0] !== true){
                     this.args(args);
                 }
+                
                 // Doc is ready for manipulation
                 if (doc){
                     doc.open();
@@ -327,18 +313,12 @@
                         '<head></head><body></body>'                    
                     );
                     doc.close();
-                    
-                    // Re-apply cached options & args, e.g. when preparing a new iframe document
-                    if (applyCachedArgs){    
-                        this
-                            ._trim()
-                            .args(true);
-                        
-                        // Call the ready callback
-                        // TODO: This requires some thought... this re-runs the fn passed as an arg to the constructor. The fn might execute something only intended to be run once, on the first 'ready' callback. That is, the fn constructor arg is not just a simple 'ready' fn.
-                        this.args().callback.call(this);
-                    }
-                    this.trigger('document', applyCachedArgs);
+                    this
+                        ._trim()
+                        // Apply the cached options & args
+                        .args(true)
+                        // Trigger the 'ready' event, which is analogous to the $().ready() event for the global document
+                        .trigger('ready');
                 }
                 // Doc not ready, so apply arguments at next load event
                 else {
@@ -351,21 +331,17 @@
             
             args: function(){
                 var
-                    aomi = this,
                     args = $.makeArray(arguments),
-                    found = {},
-                    argsCache;
-                
-                // Get cached constructor arguments
-                if (!this._args){
-                    this._args = {
+                    defaultArgs = {
                         headContents: '',
                         bodyContents: '',
                         options: $.extend(true, {}, defaultOptions),
                         callback: function(){}
-                    };
-                }
-                argsCache = this._args;
+                    },
+                    found = {},
+                    argsCache = this._args || defaultArgs;
+                
+                // Return cached args
                 if (!args.length){
                     return argsCache;
                 }
@@ -374,34 +350,35 @@
                 if ($.isArray(args[0])){
                     return this.args.apply(this, args[0]);
                 }
+                if (args[0] === true){
+                    // apply cached options and constructor arguments
+                    this
+                        .options(true)
+                        .contents(argsCache.headContents, argsCache.bodyContents, true)
+                        // Call the callback on the next 'ready' event
+                        .one('ready', argsCache.callback);
+                }
+                else {
                 
-                // All arguments are optional. Determine which were supplied.
-                $.each(args.reverse(), function(i, arg){
-                    if (arg === true){
-                        // apply cached options and constructor arguments; prepare a new iframe document
-                        aomi
-                            .options(true)
-                            .contents(argsCache.headContents, argsCache.bodyContents, true);
-                        // Call the ready callback - TODO: Should this really be done?
-                        argsCache.callback.call(aomi);
-                        return false; // exit $.each loop
-                    }                   
-                    if (!found.callback && $.isFunction(arg)){
-                        found.callback = arg;
-                    }
-                    else if (!found.options && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
-                        found.options = arg;
-                    }
-                    // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers? Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
-                    else if (!found.bodyContents && typeof arg !== 'undefined'){
-                        found.bodyContents = arg;
-                    }
-                    // Once callback and options are assigned, any remaining args must be the headContents; then exit loop
-                    else if (!found.headContents && typeof arg !== 'undefined'){
-                        found.headContents = arg;
-                    }
-                });
-                $.extend(true, argsCache, found);
+                    // All arguments are optional. Determine which were supplied.
+                    $.each(args.reverse(), function(i, arg){
+                        if (!found.callback && $.isFunction(arg)){
+                            found.callback = arg;
+                        }
+                        else if (!found.options && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
+                            found.options = arg;
+                        }
+                        // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers? Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
+                        else if (!found.bodyContents && typeof arg !== 'undefined'){
+                            found.bodyContents = arg;
+                        }
+                        // Once callback and options are assigned, any remaining args must be the headContents; then exit loop
+                        else if (!found.headContents && typeof arg !== 'undefined'){
+                            found.headContents = arg;
+                        }
+                    });
+                    this._args = $.extend(true, defaultArgs, found);
+                }
                 return this;
             },
             
@@ -695,7 +672,7 @@
                     $(this[0]).bind('load', callback);
                     
                     // Prevent IE having permission denied error, when relying on jQuery's built-in unload event handler removal
-                    $(window).unload(function(){
+                    $(win).unload(function(){
                         aomi.iframeLoad(callback, true);
                     });
                 }
