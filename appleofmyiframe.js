@@ -97,7 +97,8 @@
             },
             src:'about:blank', // don't include in attr object, or unexpected triggering of 'load' event may happen on applying attributes
             doctype:5, // html5 doctype
-            autoresize:true,
+            autowidth:true,
+            autoheight:true,
             target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
             css:$.extend({}, cssPlain),
             title:''
@@ -115,6 +116,7 @@
                         fromReload;
                     
                     // If a url supplied, add it as the iframe src, to load the page
+                    // NOTE: iframes intented to display external documents must have the src passed as the bodyContents arg, rather than setting the src later - or expect weirdness
                     if (isUrl(args.bodyContents)){
                         options.src = args.bodyContents;
                         
@@ -124,7 +126,7 @@
                         }
                     }   
                     // If an injected iframe (i.e. without a document url set as the src)
-                    else if (args.bodyContents || args.headContents){
+                    else {
                         this
                             // When an iframe element is attached to the AOMI object, bind a handler function to the iframe's native 'load' event
                             .bind('attachElement', function(){
@@ -158,7 +160,17 @@
                                         aomi.replace();
                                     }
                                 });
-                            });
+                            })
+                            
+                            .bind('load', this.resize)
+                            // Setup auto-resize event listeners
+                            .bind('headContents', this.resize)
+                            .bind('bodyContents', this.resize)
+                        // TODO: How should this be simplified, so that a call to contents(headContents, bodyContents) doesn't cause two resize() calls?
+                        
+                            .bind('manipulateBody', this.resize);
+                        // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
+                            
                         
                         // Setup iframe document caching
                         // Ridiculously, each time the iframe element is moved, or removed and re-inserted into the DOM, then the native onload event fires and the iframe's document is discarded. (This doesn't happen in IE, thought). So we need to bring back the contents from the discarded document, by caching it and restoring from the cache on each 'load' event.
@@ -180,14 +192,6 @@
                                     }
                                     this.cache();
                                 });
-                        }
-                        // Setup auto-resize event listeners
-                        if (options.autoresize){
-                            this
-                                .bind('headContents', this.resize)
-                                .bind('bodyContents', this.resize);
-                                // TODO: How should this be simplified, so that a call to contents() doesn't lead to two calls to resize()? In this function, we could use the 'contents' event, but it makes sense to use 'headContents' and 'bodyContents' for general usage.
-                                // TODO: should this use setTimeout of 250ms, to allow rendering time (particularly in Firefox)?
                         }
                     }
                     
@@ -330,86 +334,120 @@
                     return this;
                 },
                 
-                args: function(){
-                    var
-                        args = $.makeArray(arguments),
-                        defaultArgs = {
-                            headContents: '',
-                            bodyContents: '',
-                            options: $.extend(true, {}, defaultOptions),
-                            callback: function(){}
-                        },
-                        found = {},
-                        argsCache = this._args || defaultArgs;
-                    
-                    // Return cached args
-                    if (!args.length){
-                        return argsCache;
-                    }
-                    
-                    // An array of args was passed. Re-apply as arguments to this function.
-                    if ($.isArray(args[0])){
-                        return this.args.apply(this, args[0]);
-                    }
-                    if (args[0] === true){
-                        // apply cached options and constructor arguments
-                        this
-                            .options(true)
-                            .contents(argsCache.headContents, argsCache.bodyContents, true)
-                            // Call the callback on the next 'ready' event
-                            .one('ready', argsCache.callback);
-                    }
-                    else {
-                    
-                        // All arguments are optional. Determine which were supplied.
-                        $.each(args.reverse(), function(i, arg){
-                            if (!found.callback && $.isFunction(arg)){
-                                found.callback = arg;
-                            }
-                            else if (!found.options && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
-                                found.options = arg;
-                            }
-                            // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers? Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
-                            else if (!found.bodyContents && typeof arg !== 'undefined'){
-                                found.bodyContents = arg;
-                            }
-                            // Once callback and options are assigned, any remaining args must be the headContents; then exit loop
-                            else if (!found.headContents && typeof arg !== 'undefined'){
-                                found.headContents = arg;
-                            }
-                        });
-                        this._args = $.extend(true, defaultArgs, found);
-                    }
-                    return this;
-                },
-                
-                options: function(newOptions){
-                    var args, options;
-                    
-                    if (newOptions){
-                        if (typeof newOptions === 'object'){
-                            this.args(newOptions);
+                args: $.extend(
+                    function(){
+                        var
+                            aomi = this,
+                            args = $.makeArray(arguments),
+                            defaultArgs = this.args.defaultArgs,
+                            argsCache = this._args || defaultArgs(),
+                            found = {},
+                            optionsFound;
+                        
+                        // Return cached args
+                        if (!args.length){
+                            return $.extend(true, argsCache, {
+                                options:this.options()
+                            });
                         }
-                        else if (newOptions === true){
-                            args = this.args();
-                            options = this.options();
-                            
+                        
+                        // An array of args was passed. Re-apply as arguments to this function.
+                        if ($.isArray(args[0])){
+                            return this.args.apply(this, args[0]);
+                        }
+                        if (args[0] === true){
+                            // apply cached options and constructor arguments
                             this
-                                // Re-apply cached title
-                                .title(true)
-                                
-                                // Let anchor links open pages in the default target
-                                .live('a', 'click', function(){
-                                    if (!$(this).attr('target') && $(this).attr('href')){
-                                        $(this).attr('target', options.target);
-                                    }
-                                });
+                                .options(true)
+                                .contents(argsCache.headContents, argsCache.bodyContents, true)
+                                // Call the callback on the next 'ready' event
+                                .one('ready', argsCache.callback);
+                        }
+                        else {
+                        
+                            // All arguments are optional. Determine which were supplied.
+                            $.each(args.reverse(), function(i, arg){
+                                if (!found.callback && $.isFunction(arg)){
+                                    found.callback = arg;
+                                }
+                                else if (!optionsFound && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
+                                    aomi.options(arg);
+                                    optionsFound = true;
+                                }
+                                // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers? Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
+                                else if (!found.bodyContents && typeof arg !== 'undefined'){
+                                    found.bodyContents = arg;
+                                }
+                                // Once callback and options are assigned, any remaining args must be the headContents; then exit loop
+                                else if (!found.headContents && typeof arg !== 'undefined'){
+                                    found.headContents = arg;
+                                }
+                            });
+                            this._args = $.extend(true, defaultArgs(), found);
                         }
                         return this;
+                    },
+                    {
+                        defaultArgs: function(){
+                            return {
+                                headContents: '',
+                                bodyContents: '',
+                                callback: function(){}
+                                // NOTE: options arg is handled by aomi.options()
+                            };
+                        }
                     }
-                    // !newOptions
-                    return this.args().options;
-                },                
+                ),
+                
+                options: $.extend(
+                    function(newOptions){
+                        var
+                            thisFn = this.options,
+                            getDefaults = thisFn.defaultOptions,
+                            applyPrefs = thisFn._applyPrefs,
+                            options;
+                        
+                        if (newOptions){
+                            // Cache new options
+                            if (typeof newOptions === 'object'){
+                                this._options = $.extend(true, getDefaults(), newOptions);
+                            }
+                            // Apply cached options to iframe
+                            else if (newOptions === true){
+                                options = this.options();
+                                this
+                                    // Re-apply cached title
+                                    .title(true)
+                                    
+                                    // Let anchor links open pages in the default target
+                                    .live('a', 'click', function(){
+                                        if (!$(this).attr('target') && $(this).attr('href')){
+                                            $(this).attr('target', options.target);
+                                        }
+                                    });
+                            }
+                            return this;
+                        }
+                                                
+                        // no args passed
+                        if (!this._options){
+                            this._options = getDefaults();
+                        }
+                        return applyPrefs(this._options);
+                    },
+                    {
+                        defaultOptions: function(){
+                            return $.extend(true, {}, defaultOptions);
+                        },
+                        
+                        _applyPrefs: function(options){
+                            if (options.autowidth){
+                                options.css.width = '100%';
+                            }
+                            return options;
+                        }
+                    }
+                ),                
                 
                 load: function(callback){
                     return this.bind('load', callback);
@@ -437,7 +475,7 @@
                 // TODO: should args() be able to return as an array, so we can do an apply() on $.iframe?
                 clone: function(){
                     var args = this.args();
-                    return $.iframe(args.headContents, args.bodyContents, args.options, args.callback);
+                    return $.iframe(args.headContents, args.bodyContents, this.options(), args.callback);
                 },
                 
                 // Replace the iframe element with the iframe element from a replica AOMI object
@@ -554,28 +592,23 @@
                 },
             
                 // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
-                resize: function(matchWidth, matchHeight){
+                resize: function(){
                     var
                         bodyChildren = this.body().children(),
-                        width, height, htmlElement;
-                                        
-                    if (bodyChildren.length){
-                        width = bodyChildren.outerWidth(true);
-                        height = bodyChildren.outerHeight(true);
-                    }
-                    else {
                         htmlElement = this.$('html');
-                        width = htmlElement.outerWidth(true);
-                        height = htmlElement.outerHeight(true);
-                    }
                     
-                    if (matchWidth !== false){
-                        this.width(width);
-                    }
-                    if (matchHeight !== false){
-                        this.height(height);
-                    }
-                    return this.trigger('resize', [width, height]);
+                    if (this.options().autoheight){
+                        this.height(
+                            /*
+                            bodyChildren.length ?
+                                bodyChildren.outerHeight(true) :
+                                htmlElement.outerHeight(true)
+                            */
+                            // TODO: Does htmlElement.outerHeight have problems, compared with measuring the total height of bodyChildren?
+                            htmlElement.outerHeight(true)
+                        );
+                    }  
+                    return this.trigger('resize');
                 },
                 
                 // TODO: Currently, this will return true for an iframe that has a cross-domain src attribute and is not yet in the DOM. We should include a check to compare the domain of the host window with the domain of the iframe window - including checking document.domain property
@@ -778,7 +811,7 @@
                                     if (!this.hasBlankSrc()){
                                         this.reload();
                                     }
-                                    return this.trigger(method);
+                                    return this.trigger('manipulateIframe', method);
                                 };
                             }
                         },
@@ -796,11 +829,7 @@
                             wrapper: function(method){
                                 return function(){
                                     $.fn[method].apply(this.body(), arguments);
-                                    // TODO: Ideally, we'd autoresize the iframe any time that its content is manipulated, e.g. via DOM mutation events on the contents
-                                    if (this.options().autoresize){
-                                        this.resize();
-                                    }
-                                    return this.trigger(method);
+                                    return this.trigger('manipulateBody', method);
                                 };
                             }
                         }
@@ -809,10 +838,10 @@
                 
                 $.each(
                     jQueryMethods,
-                    function(i, jQueryMethod){
-                        var wrapper = jQueryMethod.wrapper;
+                    function(i, method){
+                        var wrapper = method.wrapper;
                         $.each(
-                            jQueryMethod.fn,
+                            method.fn,
                             function(j, fn){
                                 methodsForPrototype[fn] = wrapper(fn);
                             }

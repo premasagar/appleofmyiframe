@@ -80,6 +80,7 @@
         clear:both;
         background-color:#fff;
         border-color:#336;
+        padding:1.62em;
     }
     #stage2 {
         background-color:#336;
@@ -89,9 +90,8 @@
         color:#ccf;
     }
     iframe {
-        display:block;
-        margin:1.62em 0.62em !important;
-        border:1px solid #336 !important;
+        margin-bottom:2.62em !important;
+        outline: 1px solid #ccc;
     }
   </style>
 </head>
@@ -323,8 +323,8 @@
             '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color.</p>',
             function(){
                 this
-                    .css({padding:'2.62em'})
-                    .style('p {background-color:#336; color:#ccf; font-size:1.6em;}');
+                    .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
+                    .body().css({padding:'2.62em'})
             }
         )
             .attr('id', 'i' + count++)
@@ -336,8 +336,6 @@
             {
                 css:{
                     backgroundColor:'#ccf',
-                    padding:'2.62em',
-                    margin:'1.62em 1.62em 2.62em 0',
                     color:'#336'
                 }
             }
