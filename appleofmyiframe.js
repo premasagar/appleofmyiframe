@@ -138,8 +138,6 @@
                         this
                             // When an iframe element is attached to the AOMI object, bind a handler function to the iframe's native 'load' event
                             .bind('attachElement', function(){
-                                var aomi = this;
-                            
                                 this.iframeLoad(function(){
                                     var handler = arguments.callee;
                                     
