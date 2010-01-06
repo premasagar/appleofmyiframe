@@ -1,29 +1,30 @@
 /*!
 * AppleOfMyIframe
-*     v0.95
 **
     JavaScript library for creating & manipulating iframe documents on-the-fly
-    http://github.com/premasagar/appleofmyiframe
+        github.com/premasagar/appleofmyiframe
 
     by Premasagar Rose
-        http://premasagar.com + http://dharmafly.com
+        premasagar.com
+        dharmafly.com
 
     license:
-        http://www.opensource.org/licenses/mit-license.php
+        opensource.org/licenses/mit-license.php
 
 *//*
 
     requires jQuery (so far only tested with jQuery v1.3.2)
-    adds methods:
+    creates methods:
         jQuery.iframe()
         jQuery(elem).intoIframe()
         
     **
     
     contributors:
-        Alastair James - http://github.com/onewheelgood
-        Jonathan Lister - http://jaybyjayfresh.com
+        Alastair James: github.com/onewheelgood
+        Jonathan Lister: jaybyjayfresh.com
     
+    **
     
     ~2.7KB minified & gzipped
 
@@ -62,6 +63,8 @@
 
 
     var
+        version = '0.95',
+    
         // Namespace
         ns = 'aomi',
         
@@ -97,16 +100,20 @@
             },
             src:'about:blank', // don't include in attr object, or unexpected triggering of 'load' event may happen on applying attributes
             doctype:5, // html5 doctype
-            autowidth:true,
-            autoheight:true,
             target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
-            css:$.extend({}, cssPlain),
-            title:''
+            autoheight:true, // shrink the iframe element to the height of its document body
+            css:$.extend(
+                {width:'100%'}, // ensures that iframe element stretches to fill the containing width
+                cssPlain
+            ),
+            title:'' // a title for the iframe document
         },
                 
         // Main class
         AppleOfMyIframe = new JqueryClass(
             $.extend({
+                aomi: version,
+            
                 init: function(){
                     var 
                         // Cache the constructor arguments, to enable later reloading
@@ -160,17 +167,19 @@
                                         aomi.replace();
                                     }
                                 });
-                            })
-                            
-                            // Setup auto-resize event listeners
-                            // After the constructor 'ready' callback
-                            .one('load', this.resize) // TODO: is one() enough?
-                            
-                            // On appending to the head
-                            .bind('manipulateHead', this.resize)
-                            .bind('manipulateBody', this.resize);
-                            // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
-                            
+                            });
+                        
+                        // Setup auto-resize event listeners
+                        if (options.autoheight){
+                            this
+                                // After the constructor 'ready' callback
+                                .one('load', this.resize) // TODO: is one() enough?
+                                
+                                // On appending to the head
+                                .bind('manipulateHead', this.resize)
+                                .bind('manipulateBody', this.resize);
+                                // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
+                        }                            
                         
                         // Setup iframe document caching
                         // Ridiculously, each time the iframe element is moved, or removed and re-inserted into the DOM, then the native onload event fires and the iframe's document is discarded. (This doesn't happen in IE, thought). So we need to bring back the contents from the discarded document, by caching it and restoring from the cache on each 'load' event.
@@ -334,77 +343,69 @@
                     return this;
                 },
                 
-                args: $.extend(
-                    function(){
-                        var
-                            aomi = this,
-                            args = $.makeArray(arguments),
-                            defaultArgs = this.args.defaultArgs,
-                            argsCache = this._args || defaultArgs(),
-                            found = {},
-                            optionsFound;
-                        
-                        // Return cached args
-                        if (!args.length){
-                            return $.extend(true, argsCache, {
-                                options:this.options()
-                            });
-                        }
-                        
-                        // An array of args was passed. Re-apply as arguments to this function.
-                        if ($.isArray(args[0])){
-                            return this.args.apply(this, args[0]);
-                        }
-                        if (args[0] === true){
-                            // apply cached options and constructor arguments
-                            this
-                                .options(true)
-                                .contents(argsCache.headContents, argsCache.bodyContents, true)
-                                // Call the callback on the next 'ready' event
-                                .one('ready', argsCache.callback);
-                        }
-                        else {
-                        
-                            // All arguments are optional. Determine which were supplied.
-                            $.each(args.reverse(), function(i, arg){
-                                if (!found.callback && $.isFunction(arg)){
-                                    found.callback = arg;
-                                }
-                                else if (!optionsFound && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
-                                    aomi.options(arg);
-                                    optionsFound = true;
-                                }
-                                // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers? Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
-                                else if (!found.bodyContents && typeof arg !== 'undefined'){
-                                    found.bodyContents = arg;
-                                }
-                                // Once callback and options are assigned, any remaining args must be the headContents; then exit loop
-                                else if (!found.headContents && typeof arg !== 'undefined'){
-                                    found.headContents = arg;
-                                }
-                            });
-                            this._args = $.extend(true, defaultArgs(), found);
-                        }
-                        return this;
-                    },
-                    {
-                        defaultArgs: function(){
-                            return {
-                                headContents: '',
-                                bodyContents: '',
-                                callback: function(){}
-                                // NOTE: options arg is handled by aomi.options()
-                            };
-                        }
+                args: function(){
+                    var
+                        aomi = this,
+                        args = $.makeArray(arguments),
+                        defaultArgs = {
+                            headContents: '',
+                            bodyContents: '',
+                            callback: function(){}
+                            // NOTE: options arg is handled by aomi.options()
+                        },
+                        argsCache = this._args || defaultArgs,
+                        found = {},
+                        optionsFound;
+                    
+                    // Return cached args
+                    if (!args.length){
+                        return $.extend(true, argsCache, {
+                            options:this.options()
+                        });
                     }
-                ),
+                    
+                    // An array of args was passed. Re-apply as arguments to this function.
+                    if ($.isArray(args[0])){
+                        return this.args.apply(this, args[0]);
+                    }
+                    if (args[0] === true){
+                        // apply cached options and constructor arguments
+                        this
+                            .options(true)
+                            .contents(argsCache.headContents, argsCache.bodyContents, true)
+                            // Call the callback on the next 'ready' event
+                            .one('ready', argsCache.callback);
+                    }
+                    else {
+                    
+                        // All arguments are optional. Determine which were supplied.
+                        $.each(args.reverse(), function(i, arg){
+                            if (!found.callback && $.isFunction(arg)){
+                                found.callback = arg;
+                            }
+                            else if (!optionsFound && typeof arg === 'object' && !isJQuery(arg) && !isElement(arg)){
+                                aomi.options(arg);
+                                optionsFound = true;
+                            }
+                            // TODO: If the bodyContents or headContents is a DOM node or jQuery collection, does this throw an error in some browsers? Probably, since we have not used adoptNode, and the nodes have a different ownerDocument. Should the logic in reload for falling back from adoptNode be taken into a more generic function that is used here?
+                            else if (!found.bodyContents && typeof arg !== 'undefined'){
+                                found.bodyContents = arg;
+                            }
+                            // Once callback and options are assigned, any remaining args must be the headContents; then exit loop
+                            else if (!found.headContents && typeof arg !== 'undefined'){
+                                found.headContents = arg;
+                            }
+                        });
+                        this._args = $.extend(true, defaultArgs, found);
+                    }
+                    return this;
+                },
                 
                 options: $.extend(
                     function(newOptions){
                         var
                             thisFn = this.options,
                             getDefaults = thisFn.defaultOptions,
-                            applyPrefs = thisFn._applyPrefs,
                             options;
                         
                         if (newOptions){
@@ -429,22 +430,15 @@
                             return this;
                         }
                                                 
-                        // no args passed
+                        // No args passed
                         if (!this._options){
                             this._options = getDefaults();
                         }
-                        return applyPrefs(this._options);
+                        return this._options;
                     },
                     {
                         defaultOptions: function(){
                             return $.extend(true, {}, defaultOptions);
-                        },
-                        
-                        _applyPrefs: function(options){
-                            if (options.autowidth){
-                                options.css.width = '100%';
-                            }
-                            return options;
                         }
                     }
                 ),                
@@ -597,20 +591,18 @@
                 // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
                 resize: function(){
                     var
-                        bodyChildren = this.body().children(),
+                        //bodyChildren = this.body().children(),
                         htmlElement = this.$('html');
                     
-                    if (this.options().autoheight){
-                        this.height(
-                            /*
-                            bodyChildren.length ?
-                                bodyChildren.outerHeight(true) :
-                                htmlElement.outerHeight(true)
-                            */
-                            // TODO: Does htmlElement.outerHeight have problems, compared with measuring the total height of bodyChildren?
+                    this.height(
+                        htmlElement.outerHeight(true)
+                        /*
+                        bodyChildren.length ?
+                            bodyChildren.outerHeight(true) :
                             htmlElement.outerHeight(true)
-                        );
-                    }  
+                        */
+                        // TODO: Does htmlElement.outerHeight have problems, compared with measuring the total height of bodyChildren?
+                    ); 
                     return this.trigger('resize');
                 },
                 
