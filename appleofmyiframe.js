@@ -63,6 +63,7 @@
 
 
     var
+        // AOMI script version
         version = '0.95',
     
         // Namespace
@@ -112,8 +113,6 @@
         // Main class
         AppleOfMyIframe = new JqueryClass(
             $.extend({
-                aomi: version,
-            
                 init: function(){
                     var 
                         aomi = this,
@@ -173,6 +172,7 @@
                             this
                                 // After the constructor 'ready' callback
                                 .one('load', this.resize) // TODO: is one() enough?
+                                .bind('reload', this.resize)
                                 
                                 // On appending to the head
                                 .bind('manipulateHead', this.resize)
@@ -856,16 +856,18 @@
     $.extend(
         true,
         {
-            iframe: function(headContents, bodyContents, options, callback) {
-                return new AppleOfMyIframe(headContents, bodyContents, options, callback);
-            },
-            fn : {
+            iframe: $.extend(
+                function(headContents, bodyContents, options, callback){
+                    return new AppleOfMyIframe(headContents, bodyContents, options, callback);
+                },
+                {aomi: version} // script version number - for 3rd party scripts to verify that jQuery.iframe is created by AppleOfMyIframe, and to check the script version
+            ),
+            fn: {
                 // TODO: Allow multiple elements in a collection to be replaced with iframes, e.g. $('.toReplace').intoIframe()
                 // TODO: Where the element doesn't have an explicit width set, the iframe will not be able to resize to it. One hacky method to determine the width: display the element inline, measure its width, then return the display and then set the width of the iframe.
                 intoIframe: function(headContents, options, callback){
-                    var aomi = $.iframe(headContents, this, options, callback);
-                    aomi.replaceAll(this);
-                    return aomi;
+                    return $.iframe(headContents, this, options, callback)
+                        .replaceAll(this);
                 }
             }
         }
