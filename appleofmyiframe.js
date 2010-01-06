@@ -116,6 +116,7 @@
             
                 init: function(){
                     var 
+                        aomi = this,
                         // Cache the constructor arguments, to enable later reloading
                         args = this.args($.makeArray(arguments))
                             .args(), // retrieve the sorted arguments
@@ -179,6 +180,11 @@
                                 .bind('manipulateHead', this.resize)
                                 .bind('manipulateBody', this.resize);
                                 // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
+                            
+                            // Global window resizing
+                            $(window).resize(function(){
+                                aomi.resize();
+                            });
                         }                            
                         
                         // Setup iframe document caching
