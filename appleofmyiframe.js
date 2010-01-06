@@ -162,14 +162,14 @@
                                 });
                             })
                             
-                            .bind('load', this.resize)
                             // Setup auto-resize event listeners
-                            .bind('headContents', this.resize)
-                            .bind('bodyContents', this.resize)
-                        // TODO: How should this be simplified, so that a call to contents(headContents, bodyContents) doesn't cause two resize() calls?
-                        
+                            // After the constructor 'ready' callback
+                            .one('load', this.resize) // TODO: is one() enough?
+                            
+                            // On appending to the head
+                            .bind('manipulateHead', this.resize)
                             .bind('manipulateBody', this.resize);
-                        // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
+                            // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
                             
                         
                         // Setup iframe document caching
@@ -230,7 +230,7 @@
                 
                 // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
                 trigger: function(type, data){
-                    /*
+                    /**/
                     // DEBUG LOGGING
                     var debug = [this.attr('id') + ': *' + type + '*'];
                     if (data){
@@ -239,7 +239,7 @@
                     //debug.push(arguments.callee.caller);
                     _.apply(null, debug);
                     // end DEBUG LOGGING
-                    */
+                    /**/
                     
                     event.trigger(type + '.' + ns, data, this);
                     return this;
@@ -528,20 +528,23 @@
                         bodyContents = headContents;
                         headContents = false;
                     }
-                    this.head(headContents, emptyFirst);
-                    this.body(bodyContents, emptyFirst);
-                    return this.trigger('contents');
+                    return this
+                        .head(headContents, emptyFirst)
+                        .body(bodyContents, emptyFirst);
                 },
 
                 head: function(contents, emptyFirst){
-                    var head = this.$('head');
+                    var
+                        head = this.$('head'),
+                        method = 'append';
+                    
                     if (typeof contents !== 'undefined' && contents !== false){
                         if (head.length){
                             if (emptyFirst){
                                 head.empty();
                             }
-                            head.append(contents);
-                            this.trigger('headContents');
+                            head[method](contents);
+                            this.trigger('manipulateHead', method);
                         }
                         // Document not active because iframe out of the DOM. Defer till the next 'load' event.
                         else {
@@ -561,8 +564,8 @@
                             if (emptyFirst){
                                 body.empty();
                             }
-                            body.append(contents);
-                            this.trigger('bodyContents');
+                            this
+                                .append(contents);
                         }
                         // Document not active because iframe out of the DOM. Defer till the next 'load' event.
                         else {
