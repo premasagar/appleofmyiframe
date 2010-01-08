@@ -169,19 +169,24 @@
                         
                         // Setup auto-resize event listeners
                         if (options.autoheight){
-                            this
-                                // After the constructor 'ready' callback
-                                .one('load', this.resize) // TODO: is one() enough?
-                                .bind('reload', this.resize)
+                            // After the constructor 'ready' callback
+                            this.one('load', function(){
+                                this
+                                    // Resize the iframe to the body contents
+                                    .resize()
+                                    
+                                    // Then set up event listeners to resize later on
+                                    .bind('reload', this.resize)
                                 
-                                // On appending to the head
-                                .bind('manipulateHead', this.resize)
-                                .bind('manipulateBody', this.resize);
-                                // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
-                            
-                            // Global window resizing
-                            $(window).resize(function(){
-                                aomi.resize();
+                                    // On appending to the head
+                                    .bind('manipulateHead', this.resize)
+                                    .bind('manipulateBody', this.resize);
+                                    // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
+                        
+                                // Global window resizing
+                                $(window).resize(function(){
+                                    aomi.resize();
+                                });
                             });
                         }                            
                         
