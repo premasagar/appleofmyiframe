@@ -257,7 +257,7 @@
                     // DEBUG LOGGING
                     if ($.iframe.debug){
                         var debug = [this.attr('id') + ': *' + type + '*'];
-                        if (data){
+                        if (typeof data !== 'undefined'){
                             debug.push(data);
                         }
                         //debug.push(arguments.callee.caller);
@@ -604,21 +604,23 @@
                 },
             
                 // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
-                resize: function(){
+                resize: function(doWidth, doHeight){ // default is resize height only (as with other block-level elements)
                     var
-                        //bodyChildren = this.body().children(),
-                        htmlElement = this.$('html');
+                        bodyChildren = this.body().children(),
+                        htmlElement = this.$('html'),
+                        doWidth = doWidth || false,
+                        doHeight = doHeight !== false || true,
+                        width, height;
                     
-                    this.height(
-                        htmlElement.outerHeight(true)
-                        /*
-                        bodyChildren.length ?
-                            bodyChildren.outerHeight(true) :
-                            htmlElement.outerHeight(true)
-                        */
-                        // TODO: Does htmlElement.outerHeight have problems, compared with measuring the total height of bodyChildren?
-                    ); 
-                    return this.trigger('resize');
+                    if (doWidth){
+                        width = Math.max(bodyChildren.outerWidth(true), htmlElement.outerWidth(true));
+                        this.width(width);
+                    }
+                    if (doHeight){
+                        height = Math.max(bodyChildren.outerHeight(true), htmlElement.outerHeight(true));
+                        this.height(height);
+                    }
+                    return this.trigger('resize', [width, height]);
                 },
                 
                 // TODO: Currently, this will return true for an iframe that has a cross-domain src attribute and is not yet in the DOM. We should include a check to compare the domain of the host window with the domain of the iframe window - including checking document.domain property
