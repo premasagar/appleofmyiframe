@@ -254,16 +254,16 @@
                 
                 // NOTE: We use $.event.trigger() instead of this.trigger(), because we want the callback to have the AOMI object as the 'this' keyword, rather than the iframe element itself
                 trigger: function(type, data){
-                    /**/
                     // DEBUG LOGGING
-                    var debug = [this.attr('id') + ': *' + type + '*'];
-                    if (data){
-                        debug.push(data);
+                    if ($.iframe.debug){
+                        var debug = [this.attr('id') + ': *' + type + '*'];
+                        if (data){
+                            debug.push(data);
+                        }
+                        //debug.push(arguments.callee.caller);
+                        $.iframe.debug.apply(null, debug);
                     }
-                    //debug.push(arguments.callee.caller);
-                    _.apply(null, debug);
                     // end DEBUG LOGGING
-                    /**/
                     
                     event.trigger(type + '.' + ns, data, this);
                     return this;
