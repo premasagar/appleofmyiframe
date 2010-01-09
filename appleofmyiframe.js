@@ -64,22 +64,24 @@
 
     var
         // AOMI script version
-        version = '0.95',
+        version = '0.25',
     
         // Namespace
         ns = 'aomi',
         
         // Environment
         win = window,
+        
+        // Browsers
         browser = $.browser,
         msie = browser.msie,
         ie6 = (msie && win.parseInt(browser.version, 10) === 6),
-        browserDestroysDocumentWhenIframeMoved = (function(){
-            return !msie;
-        }()),
-        browserRequiresRepaintForExternalIframes = (function(){
-            return ie6;
-        }()),
+        opera = browser.opera,
+        
+        // Browser behaviour booleans
+        loadTriggeredOnDocumentClose = opera || msie, // TODO: verify this, with different browser versions
+        documentDestroyedOnIframeMove = !msie,
+        externalIframesInvisibleOnAppend = ie6,
         
         // Shortcuts
         event = $.event,
@@ -128,7 +130,7 @@
                         options.src = args.bodyContents;
                         
                         // IE6 repaint - required a) for external iframes that are added to the doc while they are hidden, and b) for some external iframes that are moved in the DOM (e.g. google.co.uk)
-                        if (browserRequiresRepaintForExternalIframes){
+                        if (externalIframesInvisibleOnAppend){
                             this.ready(this.repaint);
                         }
                     }   
@@ -153,11 +155,15 @@
                                             // NOTE: We do this after the document is written, because browsers differ in whether they trigger an iframe load event after the doc is written. So, we manually trigger the event for all browsers.
                                             .iframeLoad(function(){
                                                 aomi.trigger('load');
-                                            })                                        
-                                            .trigger('load');
+                                            });
+                                        
+                                        // Normalise browser event triggers by triggering load event, if not triggered by the browser
+                                        if (!loadTriggeredOnDocumentClose){
+                                            aomi.trigger('load');
+                                        }
                                         
                                     }
-                                    else if (browserDestroysDocumentWhenIframeMoved){
+                                    else if (documentDestroyedOnIframeMove){
                                         aomi.reload();
                                     }
                                     // In IE, just replace the iframe element, as a reload would be unable to restore() the contents
@@ -192,7 +198,7 @@
                         
                         // Setup iframe document caching
                         // Ridiculously, each time the iframe element is moved, or removed and re-inserted into the DOM, then the native onload event fires and the iframe's document is discarded. (This doesn't happen in IE, thought). So we need to bring back the contents from the discarded document, by caching it and restoring from the cache on each 'load' event.
-                        if (browserDestroysDocumentWhenIframeMoved){
+                        if (documentDestroyedOnIframeMove){
                             this
                                 // Track when an 'extreme' reload takes place
                                 .bind('extremereloadstart', function(){
@@ -462,12 +468,12 @@
                 
                 reload: function(extreme){
                     // 'soft reload': re-apply src attribute
-                    // NOTE: browserDestroysDocumentWhenIframeMoved is included here, as only those browsers will have a 'soft' reload trigger the restore() method. Other browsers (that is, IE), should instead perform a hard reload
-                    if ((!extreme && browserDestroysDocumentWhenIframeMoved) || !this.hasBlankSrc()){
+                    // NOTE: documentDestroyedOnIframeMove is included here, as only those browsers will have a 'soft' reload trigger the restore() method. Other browsers (that is, IE), should instead perform a hard reload
+                    if ((!extreme && documentDestroyedOnIframeMove) || !this.hasBlankSrc()){
                         this.attr('src', this.attr('src'));
                     }
                     // 'hard reload': re-apply original constructor args
-                    else {
+                    else {     
                         this.trigger('extremereloadstart');
                         this.document(true);
                     }
