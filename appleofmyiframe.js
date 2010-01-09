@@ -675,7 +675,7 @@
                     // If the standard append methods don't work, then reload the iframe, using the original constructor arguments.
                     if (appendMethod === 'reload'){
                         // Remove the cached nodes, to prevent the reload triggering a new 'load' event => call to cache() => infinite loop
-                        delete this._cachedNodes; 
+                        this._cachedNodes = null; // NOTE: In Opera 10.10, if we 'delete' the _cachedNodes property, weird stuff happens, so best to make null
                         this.reload(true);
                     }
                     // Re-apply the document title
