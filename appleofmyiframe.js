@@ -105,6 +105,7 @@
             doctype:5, // html5 doctype
             target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
             autoheight:true, // shrink the iframe element to the height of its document body
+            autowidth:false,
             css:$.extend(
                 {width:'100%'}, // ensures that iframe element stretches to fill the containing width
                 cssPlain
@@ -122,7 +123,7 @@
                         args = this.args($.makeArray(arguments))
                             .args(), // retrieve the sorted arguments
                         options = this.options(),
-                        fromReload;
+                        fromReload, resize;
                     
                     // If a url supplied, add it as the iframe src, to load the page
                     // NOTE: iframes intented to display external documents must have the src passed as the bodyContents arg, rather than setting the src later - or expect weirdness
@@ -174,27 +175,32 @@
                             });
                         
                         // Setup auto-resize event listeners
-                        if (options.autoheight){
-                            // After the constructor 'ready' callback
-                            this.one('load', function(){
-                                this
-                                    // Resize the iframe to the body contents
-                                    .resize()
-                                    
-                                    // Then set up event listeners to resize later on
-                                    .bind('reload', this.resize)
-                                
-                                    // On appending to the head
-                                    .bind('manipulateHead', this.resize)
-                                    .bind('manipulateBody', this.resize);
-                                    // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
+                        if (options.autowidth || options.autoheight){
+                            if (options.autowidth){
+                                options.css.width = 'auto';
+                            }
+                            // Resize the iframe to the body contents
+                            resize = function(){
+                                aomi.resize(options.autowidth, options.autoheight);
+                            };
                         
-                                // Global window resizing
-                                $(window).resize(function(){
-                                    aomi.resize();
+                            // After the constructor 'ready' callback
+                            this
+                                .ready(resize)
+                                .one('load', function(){
+                                    this
+                                        // Then set up event listeners to resize later on
+                                        .bind('reload', resize)
+                                    
+                                        // On appending to the head
+                                        .bind('manipulateHead', resize)
+                                        .bind('manipulateBody', resize);
+                                        // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
+                            
+                                    // Global window resizing
+                                    $(window).resize(resize);
                                 });
-                            });
-                        }                            
+                        }
                         
                         // Setup iframe document caching
                         // Ridiculously, each time the iframe element is moved, or removed and re-inserted into the DOM, then the native onload event fires and the iframe's document is discarded. (This doesn't happen in IE, thought). So we need to bring back the contents from the discarded document, by caching it and restoring from the cache on each 'load' event.
