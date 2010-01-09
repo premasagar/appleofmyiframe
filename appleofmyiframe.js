@@ -186,13 +186,12 @@
                         
                             // After the constructor 'ready' callback
                             this
+                                // Resize on each 'ready' event (i.e. when first added to the DOM, and on each hard reload)
                                 .ready(resize)
+                                
+                                // Once loaded, set up event listeners to resize later
                                 .one('load', function(){
                                     this
-                                        // Then set up event listeners to resize later on
-                                        .bind('reload', resize)
-                                    
-                                        // On appending to the head
                                         .bind('manipulateHead', resize)
                                         .bind('manipulateBody', resize);
                                         // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
@@ -610,23 +609,37 @@
                 },
             
                 // TODO: If bodyChildren is a block-level element (e.g. a div) then, unless specific css has been applied, its width will stretch to fill the body element which, by default, is a set size in iframe documents (e.g. 300px wide in Firefox 3.5). Is there a way to determine the width of the body contents, as they would be on their own? E.g. by temporarily setting the direct children to have display:inline (which feels hacky, but might just work).
+                
+                // NOTE: If the iframe element's parent node has position:absolute, then the options.css.width = '100%' won't succeed in having the iframe the same width as its parent. Instead, resize(true) will need to be called.
                 resize: function(doWidth, doHeight){ // default is resize height only (as with other block-level elements)
-                    var
-                        bodyChildren = this.body().children(),
-                        htmlElement = this.$('html'),
-                        doWidth = doWidth || false,
-                        doHeight = doHeight !== false || true,
-                        width, height;
+                    var dims;
+                    
+                    doWidth = doWidth || false;
+                    doHeight = doHeight !== false || true;
+                
+                    function maxDimensions(selector){
+                        var maxWidth, maxHeight;
+                        
+                        $(selector).each(function(){
+                            if (doWidth){
+                                maxWidth = $(this).outerWidth(true);
+                            }
+                            if (doHeight){
+                                maxHeight = $(this).outerHeight(true);
+                            }
+                        });
+                        return [maxWidth, maxHeight];
+                    }
+                    
+                    dims = maxDimensions(this.$('html').add(this.body().children()));
                     
                     if (doWidth){
-                        width = Math.max(bodyChildren.outerWidth(true), htmlElement.outerWidth(true));
-                        this.width(width);
+                        this.width(dims[0]);
                     }
                     if (doHeight){
-                        height = Math.max(bodyChildren.outerHeight(true), htmlElement.outerHeight(true));
-                        this.height(height);
+                        this.height(dims[1]);
                     }
-                    return this.trigger('resize', [width, height]);
+                    return this.trigger('resize', [dims[0], dims[1]]);
                 },
                 
                 // TODO: Currently, this will return true for an iframe that has a cross-domain src attribute and is not yet in the DOM. We should include a check to compare the domain of the host window with the domain of the iframe window - including checking document.domain property
