@@ -623,7 +623,7 @@
                     doHeight = doHeight !== false || true;
                 
                     function getDimensions(selector){
-                        var maxWidth, totalHeight = 0;
+                        var maxWidth = 0, totalHeight = 0;
                         
                         $(selector).each(function(){
                             var width;
