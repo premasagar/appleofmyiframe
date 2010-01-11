@@ -123,7 +123,9 @@
                         args = this.args($.makeArray(arguments))
                             .args(), // retrieve the sorted arguments
                         options = this.options(),
-                        fromReload, resize;
+                        autowidth = options.autowidth,
+                        autoheight = options.autoheight,
+                        fromReload;
                     
                     // If a url supplied, add it as the iframe src, to load the page
                     // NOTE: iframes intented to display external documents must have the src passed as the bodyContents arg, rather than setting the src later - or expect weirdness
@@ -175,30 +177,34 @@
                             });
                         
                         // Setup auto-resize event listeners
-                        if (options.autowidth || options.autoheight){
-                            if (options.autowidth){
+                        if (autowidth || autoheight){
+                            if (autowidth){
                                 options.css.width = 'auto';
                             }
-                            // Resize the iframe to the body contents
-                            resize = function(){
-                                aomi.resize(options.autowidth, options.autoheight);
-                            };
                         
-                            // After the constructor 'ready' callback
-                            this
-                                // Resize on each 'ready' event (i.e. when first added to the DOM, and on each hard reload)
-                                .ready(resize)
+                            // When iframe first added to the DOM, resize it, and set up event listeners to resize later
+                            this.one('ready', function(){
+                                function resize(){
+                                    return aomi.resize(autowidth, autoheight);
+                                }
                                 
-                                // Once loaded, set up event listeners to resize later
-                                .one('load', function(){
-                                    this
-                                        .bind('manipulateHead', resize)
-                                        .bind('manipulateBody', resize);
-                                        // TODO: Ideally, we'd autosize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
-                            
-                                    // Global window resizing
-                                    $(window).resize(resize);
-                                });
+                                // Resize now
+                                resize()
+                                    // Bind for later
+                                    .bind('manipulateHead', function(){ // TODO: For some reason (presumably related to the bind method), we need to pass this anonymous function, and not simply .bind('manipulateHead', resize) - else the callback won't fire
+                                        return this.resize(autowidth, autoheight);
+                                    })
+                                    .bind('manipulateBody', function(){
+                                        return this.resize(autowidth, autoheight);
+                                    })
+                                    // TODO: Ideally, we'd resize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
+                                    .load(function(){ // NOTE: We resize on 'ready', so that the dimensions are in place for any custom 'ready' callbacks, and then on 'load', after any custom ready callbacks
+                                        return this.resize(autowidth, autoheight);
+                                    });
+                        
+                                // Global window resizing
+                                $(window).resize(resize);
+                            });
                         }
                         
                         // Setup iframe document caching
@@ -285,10 +291,9 @@
                 },
                 
                 one: function(type, callback){
-                    var aomi = this;
                     return this.bind(type, function outerCallback(){
-                        callback.apply(aomi, $.makeArray(arguments));
-                        aomi.unbind(type, outerCallback);
+                        callback.apply(this, $.makeArray(arguments));
+                        this.unbind(type, outerCallback);
                     });
                 },
                 
@@ -612,34 +617,42 @@
                 
                 // NOTE: If the iframe element's parent node has position:absolute, then the options.css.width = '100%' won't succeed in having the iframe the same width as its parent. Instead, resize(true) will need to be called.
                 resize: function(doWidth, doHeight){ // default is resize height only (as with other block-level elements)
-                    var dims;
+                    var dims, htmlDims, childrenDims, width, height;
                     
                     doWidth = doWidth || false;
                     doHeight = doHeight !== false || true;
                 
-                    function maxDimensions(selector){
-                        var maxWidth, maxHeight;
+                    function getDimensions(selector){
+                        var maxWidth, totalHeight = 0;
                         
                         $(selector).each(function(){
+                            var width;
+                            
                             if (doWidth){
-                                maxWidth = $(this).outerWidth(true);
+                                width = $(this).outerWidth(true);
+                                if (width > maxWidth){
+                                    maxWidth = width;
+                                }
                             }
                             if (doHeight){
-                                maxHeight = $(this).outerHeight(true);
+                                totalHeight += $(this).outerHeight(true);
                             }
                         });
-                        return [maxWidth, maxHeight];
+                        return [maxWidth, totalHeight];
                     }
                     
-                    dims = maxDimensions(this.$('html').add(this.body().children()));
+                    htmlDims = getDimensions(this.$('html'));
+                    childrenDims = getDimensions(this.body().children());
                     
                     if (doWidth){
-                        this.width(dims[0]);
+                        width = Math.max(htmlDims[0], childrenDims[0]);
+                        this.width(width);
                     }
                     if (doHeight){
-                        this.height(dims[1]);
+                        height = Math.max(htmlDims[1], childrenDims[1]);
+                        this.height(height);
                     }
-                    return this.trigger('resize', [dims[0], dims[1]]);
+                    return this.trigger('resize', [width, height]);
                 },
                 
                 // TODO: Currently, this will return true for an iframe that has a cross-domain src attribute and is not yet in the DOM. We should include a check to compare the domain of the host window with the domain of the iframe window - including checking document.domain property
