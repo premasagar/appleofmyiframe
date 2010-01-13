@@ -326,6 +326,8 @@
                 aomi.doctype('html5') === $.iframe.doctypes['html5'];
                 */
                 
+                // TODO: Should the iframe have visibility:hidden at first, then show it on load? - this may make the appearance and first rendering smoother
+                
                 document: function(){
                     var
                         args = $.makeArray(arguments),
@@ -597,6 +599,7 @@
                     return body;
                 },
                 
+                // TODO: Is this method necessary? Should the dev simply add the <title/> via the .head() method, during AOMI init?
                 title: function(title){
                     if (title === true){
                         return this.title(this.options().title);
