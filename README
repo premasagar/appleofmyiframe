@@ -1,28 +1,27 @@
 AppleOfMyIframe
+    A JavaScript library for creating & manipulating iframe documents on-the-fly
     github.com/premasagar/appleofmyiframe
     
-    A JavaScript library for creating & manipulating iframe documents on-the-fly
-
-    author
+    author:
         Premasagar Rose
             premasagar.com
             dharmafly.com
 
-    license
+    license:
         opensource.org/licenses/mit-license.php
 
     **
 
-    requires jQuery
+    requires jQuery:
         (so far tested only with jQuery v1.3.2)
     
-        creates methods
+        creates two methods:
             jQuery.iframe()
             jQuery(elem).intoIframe()
         
     **
     
-    contributors
+    contributors:
         Alastair James: github.com/onewheelgood
         Jonathan Lister: jaybyjayfresh.com
     
@@ -32,79 +31,58 @@ AppleOfMyIframe
     
     **
     
-    Example uses
-    
-    $.iframe('<p>hello world</p>')
-        .appendTo('body');
-        
-    
-    $.iframe(
-        '<style>background-color:green;</style>', // or <script/>, <link/>, etc.
-        '<p>hello world</p>'
-    )
-        .appendTo('body');
-        
-    
-    $.iframe(
-        '<style>background-color:green;</style>',
-        '<p>hello world</p>',
-        {
-            title:"Jimbob", // document title
-            doctype:5, // HTML5
-            autowidth:false, // Whether to automatically resize the width of the iframe element, as new content is added and removed from the document body
-            autoheight:true // As for autowidth, but for the iframe height
-        }
-    )
-        .appendTo('body');
-        
-    
-    $.iframe(
-        '<style>p {color:green;}</style>',
-        '<p>hello world</p>',
-        {
-            title:"Jimbob", // document title
-            doctype:5, // HTML5
-            autowidth:false, // Whether to automatically resize the width of the iframe element, as new content is added and removed from the document body
-            autoheight:true // As for autowidth, but for the iframe height
-        },
-        function(){ // callback when iframe ready
-            alert('iframe has loaded');
-            this.body('<p>hello again</p>');
-        }
-    )
-        .appendTo('body');
-    
-    **
-    
-    jQuery.iframe
-    
-        $.iframe(headContents, bodyContents, options, callback);
-        
-        Arguments
-            All arguments are optional
-        
-            headContents (string)
-                * html to be appended to the <head> when the iframe loads
-                * e.g. link, style, script tags or elements
-            bodyContents (string)
-                * html to be appended to the <body> when the iframe loads
-                * i.e. the initial body contents
-            options (object)
-                * e.g. {
-                    doctype:5, // HTML5
-                    autoheight:false, // Don't resize the iframe when new content is added to the document body
-                    title:"Jimbob's Big Day" // document title
-                }
-            callback (function)
-                * function executed on the AOMI 'ready' event, which occurs when the iframe is added to the DOM
+    example uses:
     
     
-        Returns
-            a jQuery collection instance of $('<iframe></iframe>') that has been extended with additional methods => an "AppleOfMyIframe" object
+        $.iframe('<p>hello world</p>') // Add contents to the iframe's body
+            .appendTo('body'); // Manipulate, as with any other jQuery collection
             
-    **
-    
-    jQuery(element).intoIframe
-    
-        $('#something')
-            .intoIframe()
+            
+        
+        $.iframe(
+            '<style>background-color:green;</style>', // Add contents to the iframe's head
+            '<p>hello world</p>'
+        )
+            .appendTo('body');
+            
+            
+        
+        $.iframe(
+            '<style>background-color:green;</style>',
+            '<p>hello world</p>',
+            { // Options object
+                title:"Jimbob", // document title
+                doctype:5, // HTML5 doctype
+                autoheight:true, // Automatically resize the iframe's height, as new content is added and removed from the iframe's document body
+                autowidth:false // As above, for the iframe's width
+            }
+        )
+            .appendTo('body');
+            
+            
+        
+        $.iframe(
+            '<style>p {color:green;}</style>',
+            '<p>hello world</p>',
+            {
+                title:"Jimbob", // document title
+                doctype:5, // HTML5
+                autowidth:false, // Whether to automatically resize the width of the iframe element, as new content is added and removed from the document body
+                autoheight:true // As for autowidth, but for the iframe height
+            },
+            function(){ // Callback function, executed when the iframe is ready
+                alert('iframe has loaded');
+                this.body('<p>hello again</p>'); // Other methods also available
+            }
+        )
+            .appendTo('body');
+            
+            
+            
+        $('<p>Hello world</p>') // A standard jQuery collection
+            .appendTo('body')
+            .intoIframe(); // Insert the collection into the body of an iframe, and replace that collection with the iframe
+            
+            
+        
+        More advanced methods also available.
