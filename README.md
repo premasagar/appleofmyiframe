@@ -1,12 +1,13 @@
 AppleOfMyIframe
 ===============
 *A JavaScript library for creating & manipulating iframe documents on-the-fly*
-http://github.com/premasagar/appleofmyiframe
 
 
-* Author: Premasagar Rose ([premasagar.com](http://premasagar.com) | [dharmafly.com](http://dharmafly.com))
-* License: [MIT](http://opensource.org/licenses/mit-license.php)
+* by [Premasagar Rose](http://github.com/premasagar)
+** ([premasagar.com](http://premasagar.com) / [dharmafly.com](http://dharmafly.com))
+* [MIT license](http://opensource.org/licenses/mit-license.php)
 * ~2.7KB minified & gzipped
+* [github.com/premasagar/appleofmyiframe](http://github.com/premasagar/appleofmyiframe)
 
 
 A jQuery Plugin
@@ -20,26 +21,26 @@ A jQuery Plugin
 
 Contributors
 ------------
-* Alastair James: [github.com/onewheelgood](http://github.com/onewheelgood)
-* Jonathan Lister: [jaybyjayfresh.com](http://jaybyjayfresh.com)
+* [Alastair James](http://github.com/onewheelgood)
+* [Jonathan Lister](http://jaybyjayfresh.com)
 
 
-Example uses
-------------    
-    
+Example usage
+-------------
+
+**1. Create an iframe with some body contents, and add it to the document:**
     $.iframe('<p>hello world</p>') // Add contents to the iframe's body
         .appendTo('body'); // Manipulate, as with any other jQuery collection
-        
-        
-    
+
+**2. Additionally, add elements to the iframe's head:**
     $.iframe(
         '<style>background-color:green;</style>', // Add contents to the iframe's head
         '<p>hello world</p>'
     )
         .appendTo('body');
-        
-        
-    
+
+
+**3. And change various options:**
     $.iframe(
         '<style>background-color:green;</style>',
         '<p>hello world</p>',
@@ -51,9 +52,9 @@ Example uses
         }
     )
         .appendTo('body');
-        
-        
-    
+
+
+**4. And supply a callback function, for when the iframe first loads:**
     $.iframe(
         '<style>p {color:green;}</style>',
         '<p>hello world</p>',
@@ -69,13 +70,11 @@ Example uses
         }
     )
         .appendTo('body');
-        
-        
-        
+
+**5. Inject elements that are already in the host document into an iframe
     $('<p>Hello world</p>') // A standard jQuery collection
         .appendTo('body')
         .intoIframe(); // Insert the collection into the body of an iframe, and replace that collection with the iframe
-            
-            
-        
+
+
 More advanced methods also available.
