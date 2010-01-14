@@ -3,19 +3,18 @@
 *A JavaScript library for creating & manipulating iframe documents on-the-fly*
 
 
-* by [Premasagar Rose](http://github.com/premasagar)
-    * ([premasagar.com](http://premasagar.com) / [dharmafly.com](http://dharmafly.com))
+* by [Premasagar Rose](http://github.com/premasagar) - [premasagar.com](http://premasagar.com), [dharmafly.com](http://dharmafly.com)
 * [MIT license](http://opensource.org/licenses/mit-license.php)
 * ~2.7KB minified & gzipped
 
 
 A jQuery Plugin
 ---------------
-(so far tested only with jQuery v1.3.2)
-
 ### Creates methods:
 1. jQuery.iframe()
 2. jQuery(elem).intoIframe()
+
+(so far tested only with jQuery v1.3.2)
 
 
 Contributors
@@ -27,11 +26,11 @@ Contributors
 Example usage
 -------------
 
-**1. Create an iframe with some body contents, and add it to the document:**
+1. Create an iframe with some body contents, and add it to the document:
     $.iframe('<p>hello world</p>') // Add contents to the iframe's body
         .appendTo('body'); // Manipulate, as with any other jQuery collection
 
-**2. Additionally, add elements to the iframe's head:**
+2. Additionally, add elements to the iframe's head:
     $.iframe(
         '<style>background-color:green;</style>',
         '<p>hello world</p>'
@@ -39,7 +38,7 @@ Example usage
         .appendTo('body');
 
 
-**3. And change various options:**
+3. And change various options:
     $.iframe(
         '<style>background-color:green;</style>',
         '<p>hello world</p>',
@@ -53,7 +52,7 @@ Example usage
         .appendTo('body');
 
 
-**4. And supply a callback function, for when the iframe first loads:**
+4. And supply a callback function, for when the iframe first loads:
     $.iframe(
         '<style>p {color:green;}</style>',
         '<p>hello world</p>',
@@ -70,7 +69,7 @@ Example usage
     )
         .appendTo('body');
 
-**5. Inject elements that are already in the host document into an iframe
+5. Inject elements that are already in the host document into an iframe
     $('<p>Hello world</p>') // A standard jQuery collection
         .appendTo('body')
         .intoIframe(); // Inject into the body of an iframe, then insert the iframe
