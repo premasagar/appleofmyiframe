@@ -1,42 +1,30 @@
 AppleOfMyIframe
 ===============
-* A JavaScript library for creating & manipulating iframe documents on-the-fly *
+*A JavaScript library for creating & manipulating iframe documents on-the-fly*
 http://github.com/premasagar/appleofmyiframe
 
-author
-------
-    Premasagar Rose
-        premasagar.com
-        dharmafly.com
 
-license
--------
-    opensource.org/licenses/mit-license.php
+* Author: Premasagar Rose ([premasagar.com](http://premasagar.com) | [dharmafly.com](http://dharmafly.com))
+* License: [MIT](http://opensource.org/licenses/mit-license.php)
+* ~2.7KB minified & gzipped
 
-**
 
-requires jQuery
+A jQuery Plugin
 ---------------
-    (so far tested only with jQuery v1.3.2)
+(so far tested only with jQuery v1.3.2)
 
-    creates two methods:
-        jQuery.iframe()
-        jQuery(elem).intoIframe()
-    
-**
+### Creates methods:
+1. jQuery.iframe()
+2. jQuery(elem).intoIframe()
 
-contributors
+
+Contributors
 ------------
-    Alastair James: github.com/onewheelgood
-    Jonathan Lister: jaybyjayfresh.com
+* Alastair James: [github.com/onewheelgood](http://github.com/onewheelgood)
+* Jonathan Lister: [jaybyjayfresh.com](http://jaybyjayfresh.com)
 
-**
 
-~2.7KB minified & gzipped
-
-**
-
-example uses
+Example uses
 ------------    
     
     $.iframe('<p>hello world</p>') // Add contents to the iframe's body
