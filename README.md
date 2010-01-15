@@ -77,7 +77,7 @@ Note that *all* arguments to `$.iframe()` are optional.
 5. Inject elements that are already in the host document into an iframe:
         $('<p>Hello world</p>') // A standard jQuery collection
             .appendTo('body')
-            .intoIframe(); // Inject collection into the body of an iframe, which now replaces the collection in the host document
+            .intoIframe(); // Move the collection into the body of an iframe, and insert the iframe into the host document
 
 
 More advanced methods are also available. These will be documented in [the project wiki](http://wiki.github.com/premasagar/appleofmyiframe/).
