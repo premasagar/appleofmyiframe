@@ -27,8 +27,10 @@ jQuery Methods
 --------------
 The plugin creates two methods:
 1. jQuery.iframe()
+
     This is used to create a new iframe element, wrapped inside a standard jQuery collection (i.e. `$('<iframe></iframe>')`) that has been extended with some additional methods.
 2. jQuery(elem).intoIframe()
+
     Probably less useful. This is used to replace elements in the host document with an iframe that contains those elements in the iframe's document body. (See below).
 
 
