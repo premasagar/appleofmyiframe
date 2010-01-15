@@ -25,6 +25,7 @@ AppleOfMyIframe aims to smooth over all these differences between browsers, and 
 jQuery Methods
 --------------
 The plugin creates two methods:
+
 1. jQuery.iframe()
 
     This is used to create a new iframe element, wrapped inside a standard jQuery collection (i.e. `$('<iframe></iframe>')`) that has been extended with some additional methods.
