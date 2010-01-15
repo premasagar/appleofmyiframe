@@ -22,11 +22,11 @@
     
     contributors:
         Alastair James: github.com/onewheelgood
-        Jonathan Lister: jaybyjayfresh.com
+        Jonathan Lister: github.com/jayfresh
     
     **
     
-    ~2.7KB minified & gzipped
+    3KB minified & gzipped
 
 */
 
@@ -528,6 +528,7 @@
                     return $([]);
                 },
                 
+                // TODO: Make this a read-write method
                 location: function(){
                     var
                         win = this.window(),

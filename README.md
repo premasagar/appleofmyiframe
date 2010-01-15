@@ -27,7 +27,7 @@ The plugin creates two methods:
 
 1. `jQuery.iframe()`
 
-    This is used to create a new iframe element, wrapped inside a standard jQuery collection - i.e. `$('<iframe></iframe>')` - that has been extended with some additional methods.
+    This is used to create a new iframe element, wrapped inside a standard jQuery collection - i.e. `$('<iframe></iframe>')` - that has been extended with some additional methods. This extended collection object is referred to in the [documentation](http://wiki.github.com/premasagar/appleofmyiframe/) as an "AppleOfMyIframe" or "Aomi" object.
 
 2. `jQuery(elem).intoIframe()`
 
