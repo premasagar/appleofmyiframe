@@ -66,7 +66,7 @@ Note that *all* arguments to `$.iframe()` are optional.
 
 4. Supply a callback function, for when the iframe first loads:
         $.iframe(
-            '<p>hello world</p>',
+            '<p>hello world</p>', // This argument could be omitted, and instead added to the callback function
             function(){ // Callback function
                 alert('iframe has loaded');
                 this.body('<p>hello again</p>'); // Append contents to the body
