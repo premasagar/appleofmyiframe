@@ -1,7 +1,6 @@
 [AppleOfMyIframe](http://github.com/premasagar/appleofmyiframe)
 ================
-*A JavaScript library for creating & manipulating iframe documents on-the-fly*
-
+AppleOfMyIframe is a jQuery Plugin. It aims to provide a simple JavaScript API for the manipulation of iframe elements and their contents.
 
 * by [Premasagar Rose](http://github.com/premasagar)
     * [premasagar.com](http://premasagar.com)
@@ -12,8 +11,6 @@
     * [Jonathan Lister](http://jaybyjayfresh.com)
 * ~2.7KB minified & gzipped
 
-
-AppleOfMyIframe is a jQuery Plugin. It aims to provide a simple API for the manipulation of iframe elements and their contents.
 
 Overview
 --------
