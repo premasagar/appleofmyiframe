@@ -37,11 +37,13 @@ The plugin creates two methods:
 Example usage
 -------------
 
+Note that *all* arguments to `$.iframe()` are optional.
+
 1. Create an iframe with some body contents, and add it to the document:
         $.iframe('<p>hello world</p>') // Add contents to the iframe's body
             .appendTo('body'); // Use any jQuery method here
 
-2. Additionally, add elements to the iframe's head:
+2. Insert HTML into the iframe's head *and* body:
         $.iframe(
             '<style>background-color:green;</style>',
             '<p>hello world</p>'
@@ -49,11 +51,10 @@ Example usage
             .appendTo('body');
 
 
-3. And change various options:
+3. Supply various options:
         $.iframe(
-            '<style>background-color:green;</style>',
             '<p>hello world</p>',
-            { // Options object
+            { // Options object - more options than shown here are available
                 title:"Jimbob", // document title
                 doctype:5, // HTML5 doctype
                 autoheight:true, // Automatically resize iframe height, when content is added or removed from the iframe's body
@@ -63,19 +64,12 @@ Example usage
             .appendTo('body');
 
 
-4. And supply a callback function, for when the iframe first loads:
+4. Supply a callback function, for when the iframe first loads:
         $.iframe(
-            '<style>p {color:green;}</style>',
             '<p>hello world</p>',
-            {
-                title:"Jimbob",
-                doctype:5,
-                autowidth:false,
-                autoheight:true
-            },
             function(){ // Callback function
                 alert('iframe has loaded');
-                this.body('<p>hello again</p>');
+                this.body('<p>hello again</p>'); // Append contents to the body
             }
         )
             .appendTo('body');
@@ -83,7 +77,7 @@ Example usage
 5. Inject elements that are already in the host document into an iframe:
         $('<p>Hello world</p>') // A standard jQuery collection
             .appendTo('body')
-            .intoIframe(); // Inject into the body of an iframe, then insert the iframe
+            .intoIframe(); // Inject collection into the body of an iframe, which now replaces the collection in the host document
 
 
-More advanced methods also available. See the project wiki.
+More advanced methods are also available. These will be documented in [the project wiki](http://wiki.github.com/premasagar/appleofmyiframe/).
