@@ -8,7 +8,7 @@ AppleOfMyIframe is a jQuery Plugin. It aims to provide a simple JavaScript API f
     * [Alastair James](http://github.com/onewheelgood)
     * [Jonathan Lister](http://jaybyjayfresh.com)
 * [MIT license](http://opensource.org/licenses/mit-license.php)
-* ~2.7KB minified & gzipped
+* 3KB minified & gzipped
 
 
 Overview
