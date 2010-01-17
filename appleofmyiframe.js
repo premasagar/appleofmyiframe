@@ -142,21 +142,21 @@
                         this
                             // When an iframe element is attached to the AOMI object, bind a handler function to the iframe's native 'load' event
                             .bind('attachElement', function(){
-                                this.iframeLoad(function(){
+                                this._iframeLoad(function(){
                                     var handler = arguments.callee;
                                     
                                     // If the iframe has properly loaded
                                     if (aomi._okToLoad()){
                                         aomi
                                             // Unbind this handler
-                                            .iframeLoad(handler, true)
+                                            ._iframeLoad(handler, true)
                                             
                                             // Write out the new document
                                             .document(true)
                                             
                                             // Bind an AOMI 'load' handler to the native 'load' event
                                             // NOTE: We do this after the document is written, because browsers differ in whether they trigger an iframe load event after the doc is written. So, we manually trigger the event for all browsers.
-                                            .iframeLoad(function(){
+                                            ._iframeLoad(function(){
                                                 aomi.trigger('load');
                                             });
                                         
@@ -601,7 +601,6 @@
                     return body;
                 },
                 
-                // TODO: Is this method necessary? Should the dev simply add the <title/> via the .head() method, during AOMI init?
                 title: function(title){
                     if (title === true){
                         return this.title(this.options().title);
@@ -734,7 +733,7 @@
                 
                 // Advised not to use this API method externally
                 // Proxy for iframe's native load event, with free jQuery event handling
-                iframeLoad: function(callback, unbind){
+                _iframeLoad: function(callback, unbind){
                     var aomi = this;
                     
                     if (!unbind){
@@ -742,7 +741,7 @@
                         
                         // Prevent IE having permission denied error, when relying on jQuery's built-in unload event handler removal
                         $(win).unload(function(){
-                            aomi.iframeLoad(callback, true);
+                            aomi._iframeLoad(callback, true);
                         });
                     }
                     else {
