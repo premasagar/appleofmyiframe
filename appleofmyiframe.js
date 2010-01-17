@@ -380,7 +380,7 @@
                             callback: function(){}
                             // NOTE: options arg is handled by aomi.options()
                         },
-                        argsCache = this._args || defaultArgs,
+                        argsCache = this._argsCache || defaultArgs,
                         found = {},
                         optionsFound;
                     
@@ -423,7 +423,7 @@
                                 found.headContents = arg;
                             }
                         });
-                        this._args = $.extend(true, defaultArgs, found);
+                        this._argsCache = $.extend(true, defaultArgs, found);
                     }
                     return this;
                 },
