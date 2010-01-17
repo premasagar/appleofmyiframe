@@ -120,8 +120,8 @@
                     var 
                         aomi = this,
                         // Cache the constructor arguments, to enable later reloading
-                        args = this.args($.makeArray(arguments))
-                            .args(), // retrieve the sorted arguments
+                        args = this._args($.makeArray(arguments))
+                            ._args(), // retrieve the sorted arguments
                         options = this.options(),
                         autowidth = options.autowidth,
                         autoheight = options.autoheight,
@@ -343,7 +343,7 @@
                     }
                     // Cache the passed arguments
                     if (args[0] !== true){
-                        this.args(args);
+                        this._args(args);
                     }
                     
                     // Doc is ready for manipulation
@@ -357,7 +357,7 @@
                         this
                             ._trim()
                             // Apply the cached options & args
-                            .args(true)
+                            ._args(true)
                             // Trigger the 'ready' event, which is analogous to the $().ready() event for the global document
                             .trigger('ready');
                     }
@@ -370,7 +370,7 @@
                     return this;
                 },
                 
-                args: function(){
+                _args: function(){
                     var
                         aomi = this,
                         args = $.makeArray(arguments),
@@ -393,7 +393,7 @@
                     
                     // An array of args was passed. Re-apply as arguments to this function.
                     if ($.isArray(args[0])){
-                        return this.args.apply(this, args[0]);
+                        return this._args.apply(this, args[0]);
                     }
                     if (args[0] === true){
                         // apply cached options and constructor arguments
@@ -493,9 +493,9 @@
                 },
                 
                 // Duplicate this AOMI object. This will essentially clone the iframe element, its document and all its settings, provided that they have only been manipulated via the AOMI API - e.g. by passing a function to the original constructor
-                // TODO: should args() be able to return as an array, so we can do an apply() on $.iframe?
+                // TODO: should _args() be able to return as an array, so we can do an apply() on $.iframe?
                 clone: function(){
-                    var args = this.args();
+                    var args = this._args();
                     return $.iframe(args.headContents, args.bodyContents, this.options(), args.callback);
                 },
                 
