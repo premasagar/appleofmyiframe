@@ -260,6 +260,9 @@
                     if (v === 5){ // html5 doctype
                         doctype += 'html';
                     }
+                    else if (v === 4.01){
+                        doctype += 'HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"'
+                    }
                     return doctype + '>';
                 },
                 
