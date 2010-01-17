@@ -542,9 +542,10 @@
                     }
                     return this._windowObj() ?
                         null : // iframe is in the DOM, but has a cross-domain document
-                        this.attr('src'); // iframe is out of the DOM, so its window doesn't exist and it has no location, return iframe
+                        this.attr('src'); // iframe is out of the DOM, so its window doesn't exist and it has no location
                 },
                 
+                // TODO: Is this method useful, or just clutter?
                 contents: function(headContents, bodyContents, emptyFirst){
                     if (typeof bodyContents === 'undefined'){
                         bodyContents = headContents;
