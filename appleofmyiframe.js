@@ -399,7 +399,8 @@
                         // apply cached options and constructor arguments
                         this
                             .options(true)
-                            .contents(argsCache.headContents, argsCache.bodyContents, true)
+                            .head(argsCache.headContents, true)
+                            .body(argsCache.bodyContents, true)
                             // Call the callback on the next 'ready' event
                             .one('ready', argsCache.callback);
                     }
@@ -543,17 +544,6 @@
                     return this._windowObj() ?
                         null : // iframe is in the DOM, but has a cross-domain document
                         this.attr('src'); // iframe is out of the DOM, so its window doesn't exist and it has no location
-                },
-                
-                // TODO: Is this method useful, or just clutter?
-                contents: function(headContents, bodyContents, emptyFirst){
-                    if (typeof bodyContents === 'undefined'){
-                        bodyContents = headContents;
-                        headContents = false;
-                    }
-                    return this
-                        .head(headContents, emptyFirst)
-                        .body(bodyContents, emptyFirst);
                 },
 
                 head: function(contents, emptyFirst){
