@@ -87,6 +87,7 @@
         event = $.event,
         
         // Settings
+        resizeThrottle = 250, // minimum delay between aomi.resize calls (milliseconds)
         cssPlain = {
             margin:0,
             padding:0,
@@ -185,8 +186,15 @@
                             // When iframe first added to the DOM, resize it, and set up event listeners to resize later
                             this.one('ready', function(){
                                 function resize(){
-                                    
-                                    return aomi.resize(autowidth, autoheight);
+                                    //var resize = arguments.callee;
+                                    if (!resize.resizing){
+                                        resize.resizing = true;
+                                        win.setTimeout(function(){
+                                            aomi.resize(autowidth, autoheight);
+                                            resize.resizing = false;
+                                        }, resizeThrottle);
+                                    }
+                                    return aomi;
                                 }
                                 
                                 // Resize now
