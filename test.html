@@ -185,7 +185,7 @@
 	        return debug ? // FF Firebug
 		        debug :
 		        function(){
-			        var i, argLen, log = console.log, args = arguments;
+			        var i, argLen, log = console.log, args = arguments, indent = '';
 			        if (log){ // WebKit
 				        if (typeof log.apply === 'function'){
 					        log.apply(console, args);
@@ -193,7 +193,8 @@
 				        else { // IE8
 					        argLen = args.length;
 					        for (i=0; i < argLen; i++){
-						        log(args[i]);
+						        log(indent + args[i]);
+                                indent = '---- ';
 					        }
 				        }
 			        }
@@ -252,7 +253,7 @@
             delete stealth;
             delete iHidden;
         })
-        .appendTo(stealth);
+    //    .appendTo(stealth);
     window.setTimeout(function(){
         if (!$('#append-method').text()){
             $('#append-method').text("None applied");
@@ -310,7 +311,7 @@
         
     
     window.i.push(
-    /**/
+    /*
         // External src iframes
         $.iframe('http://javascript.crockford.com/code.html')
             .attr('id', 'i' + count++)
@@ -320,7 +321,7 @@
         $.iframe('http://www.google.it')
             .attr('id', 'i' + count++)
             .appendTo('#stage1'),
-            
+         */
             
         // Injected iframes
         $.iframe(
