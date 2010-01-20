@@ -86,8 +86,7 @@
         // Shortcuts
         event = $.event,
         
-        // Settings
-        resizeThrottle = 250, // minimum delay between aomi.resize calls (milliseconds)
+        // Settings        
         cssPlain = {
             margin:0,
             padding:0,
@@ -107,6 +106,7 @@
             target:'_parent', // which window to open links in, by default - set to '_self' or '_blank' if necessary
             autoheight:true, // shrink the iframe element to the height of its document body
             autowidth:false,
+            resizeThrottle:250, // minimum delay between aomi.resize calls (milliseconds)
             css:$.extend(
                 {width:'100%'}, // ensures that iframe element stretches to fill the containing width
                 cssPlain
@@ -177,44 +177,50 @@
                                 });
                             });
                         
-                        // Setup auto-resize event listeners
+                        // Auto-resize behaviour
                         if (autowidth || autoheight){
                             if (autowidth){
                                 options.css.width = 'auto';
                             }
-                        
+                                                    
                             // When iframe first added to the DOM, resize it, and set up event listeners to resize later
-                            this.one('ready', function(){
-                                function resize(){
-                                    //var resize = arguments.callee;
-                                    if (!resize.resizing){
-                                        resize.resizing = true;
-                                        win.setTimeout(function(){
-                                            aomi.resize(autowidth, autoheight);
-                                            resize.resizing = false;
-                                        }, resizeThrottle);
+                            this
+                                .one('attachElement', function(){
+                                    this.css('visibility', 'hidden'); // hide iframe until it is resized
+                                })
+                            
+                                .one('ready', function(){
+                                    function resize(){
+                                        //var resize = arguments.callee;
+                                        if (!resize.resizing){
+                                            resize.resizing = true;
+                                            win.setTimeout(function(){
+                                                aomi
+                                                    .resize(autowidth, autoheight)
+                                                    .css('visibility', 'visible'); // show iframe again
+                                                resize.resizing = false;
+                                            }, options.resizeThrottle);
+                                        }
+                                        return aomi;
                                     }
-                                    return aomi;
-                                }
-                                
-                                // Resize now
-                                resize()
-                                    // Bind for later
-                                    .bind('manipulateHead', function(){ // TODO: For some reason (presumably related to the bind method), we need to pass this anonymous function, and not simply .bind('manipulateHead', resize) - else the callback won't fire
-                                        return resize();
-                                    })
-                                    .bind('manipulateBody', function(){
-                                        return resize();
-                                    })
-                                    // TODO: Ideally, we'd resize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
-                                    .load(function(){ // NOTE: We resize on 'ready', so that the dimensions are in place for any custom 'ready' callbacks, and then on 'load', after any custom ready callbacks
-                                        return resize();
-                                    });
-                        
-                                // Global window resizing
-                                $(win).resize(function(){_(aomi.attr('id') + ': WINDOW resize');});
-                                $(win).resize(resize);
-                            });
+                                    
+                                    // Resize now
+                                    resize()
+                                        // Bind for later
+                                        .bind('manipulateHead', function(){ // TODO: For some reason (presumably related to the bind method), we need to pass this anonymous function, and not simply .bind('manipulateHead', resize) - else the callback won't fire
+                                            return resize();
+                                        })
+                                        .bind('manipulateBody', function(){
+                                            return resize();
+                                        })
+                                        // TODO: Ideally, we'd resize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
+                                        .load(function(){ // NOTE: We resize on 'ready', so that the dimensions are in place for any custom 'ready' callbacks, and then on 'load', after any custom ready callbacks
+                                            return resize();
+                                        });
+                            
+                                    // Global window resizing
+                                    $(win).resize(resize);
+                                });
                         }
                         
                         // Setup iframe document caching
@@ -271,7 +277,7 @@
                         doctype += 'html';
                     }
                     else if (v === 4.01){
-                        doctype += 'HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"'
+                        doctype += 'HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"';
                     }
                     return doctype + '>';
                 },
@@ -624,7 +630,7 @@
                 
                 // NOTE: If the iframe element's parent node has position:absolute, then the options.css.width = '100%' won't succeed in having the iframe the same width as its parent. Instead, resize(true) will need to be called.
                 resize: function(doWidth, doHeight){ // default is resize height only (as with other block-level elements)
-                    var body, dims, htmlDims, bodyDims, childrenDims, width, height;
+                    var body, /*htmlDims,*/ bodyDims, childrenDims, width, height;
                     
                     doWidth = doWidth || false;
                     doHeight = doHeight !== false || true;
@@ -649,10 +655,9 @@
                     }
                     
                     body = this.body();
-                    htmlDims = getDimensions(this.$('html'));
+                    //htmlDims = getDimensions(this.$('html'));
                     bodyDims = getDimensions(body);
                     childrenDims = getDimensions(body.children());
-                    _(this.attr('id') + ': HEIGHTS', 'html: ' + htmlDims[1], 'children: ' + childrenDims[1], 'body: ' + bodyDims[1]);
                     
                     if (doWidth){
                         width = Math.max(bodyDims[0], childrenDims[0]);
