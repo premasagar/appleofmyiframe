@@ -193,10 +193,11 @@
 	    // Temporary for WebKit, while its console has a bug in calling debug directly or log.apply
 	    else if (/webkit/i.test(ua)){	    
             return function(){
-                var i, argLen, args = arguments;
+                var i, argLen, args = arguments, indent = '';
                 argLen = args.length;
 		        for (i=0; i < argLen; i++){
-			        console.log(args[i]);
+			        console.log(indent + args[i]);
+                    indent = '---- ';
 		        }
             };
         }
@@ -263,8 +264,11 @@
     var
         testingMsg = 'Testing...',
         timeoutMsg = 'None applied',
-        timeout = 2500,
+        timeout = 2500;
     
+    $('#append-method').text(testingMsg);
+    
+    var
         timingOut = window.setTimeout(function(){
             if ($('#append-method').text() === testingMsg){
                 $('#append-method').text(timeoutMsg);
@@ -276,21 +280,17 @@
             .appendTo('body'),
         
         iHidden = $.iframe('<p>blah</p>', {attr:{id:'iHidden'}})
-            .one('load', function(){
-                this.appendTo(stealth);
-            })
-            .one('restore', function(ev, appendMethod){ // TODO: Opera 10.10 (Win) not calling this
+            .one('restore', function(ev, appendMethod){
                 window.clearTimeout(timingOut);
                 $('#append-method').text(appendMethod);
                 stealth.remove();
                 delete stealth;
                 delete iHidden;
             })
+            .one('load', function(){ // TODO: Opera 10.10 (Win) not calling this
+                this.appendTo(stealth);
+            })
             .appendTo(stealth);
-    
-    
-    $('#append-method').text(testingMsg);
-
 
 
     // Add iframes
