@@ -41,7 +41,7 @@
         top:0;
         left:0;
     }
-    #tests {
+    #do {
         position:fixed;
         top:0;
         right:0;
@@ -49,19 +49,22 @@
         color:#fff;
         padding:0.16em 0.16em 0.38em;
     }
-    #tests h2, #tests p, #tests #controls, #tests ol, #tests li {
+    #do h2, #do p, #do .controls, #do ol, #do li {
         padding:0;
         margin:0 0.62em 0;
         color:#fff;
     }
-    #tests li {
+    #do li {
         font-size:0.62em;
         margin:0.38em;
     }
-    #tests .desc {
+    #do .desc {
         font-size:1em;
         clear:left;
         padding:0 0 0.38em 0.38em;
+    }
+    #do .controls {
+        margin-bottom:0.62em;
     }
     #reports {
         float:left;
@@ -72,7 +75,7 @@
     .stage {
         float:left;
         width:38.2%;
-        padding:0.62em;
+        padding:1.62em;
         margin-right:0.62em;
         border:1px solid #ccc;
     }
@@ -80,7 +83,6 @@
         clear:both;
         background-color:#fff;
         border-color:#336;
-        padding:1.62em;
     }
     #stage2 {
         background-color:#336;
@@ -99,17 +101,29 @@
 <body>
   <h1><a href="http://github.com/premasagar/appleofmyiframe" title="AppleOfMyIframe on GitHub">AppleOfMyIframe</a></h1>
   
-  <div id="tests">
-      <h2>Tests</h2>
-      <p class="desc">Do the iframes stay intact?</p>
-      <div id="controls">
-        <ol>
-            <li><button id="move-iframes">Move iframes in DOM</button></li>
-            <li><button id="reload-page">Reload host window</button></li> <!-- NOTE: Also test pressing the browser's own reload button -->
-            <li><button id="repaint-iframes">Repaint iframes</button>
-            <li><button id="reload-iframes">Reload iframes</button>
-            <li><button id="reload-iframes-extreme">Reload iframes (extreme)</button>
-        </ol>
+  <div id="do">
+      <div id="addiframes">
+            <h2>Add iframes</h2>
+            <div class="controls">
+            <ol>
+                <li><button id="add-injected">2x injected iframes</button></li>
+                <li><button id="add-external">2x external iframes</button></li>
+            </ol>
+          </div>
+      </div>
+      
+      <div id="tests">
+          <h2>Tests</h2>
+          <p class="desc">Do the iframes stay intact?</p>
+          <div class="controls">
+            <ol>
+                <li><button id="move-iframes">Move iframes in DOM</button></li>
+                <li><button id="repaint-iframes">Repaint iframes</button></li>
+                <li><button id="reload-iframes">Reload iframes</button></li>
+                <li><button id="reload-iframes-extreme">Reload iframes (extreme)</button></li>
+                <li><button id="reload-page">Reload host window</button></li> <!-- NOTE: Also test pressing the browser's own reload button -->
+            </ol>
+          </div>
       </div>
   </div>
   
@@ -262,21 +276,17 @@
 //return;
   
     $('button#move-iframes')
-        .toggle(
-            function(){
-                $.each(window.i, function(){
-                    _('*moving iframe*: ' + this.attr('id'));
-                    this.appendTo('#stage2');
-                });
-            },
-            function(){
-                $.each(window.i, function(){
-                    _('*moving iframe*: ' + this.attr('id'));
-                    this.appendTo('#stage1');
-                });
-            }
-        );
-
+        .click(function(){
+            $('#stage1 iframe, #stage2 iframe').each(function(){
+                _('*moving iframe*: ' + $(this).attr('id'));
+                $(this).appendTo(
+                    $(this).parent('#stage2').length ?
+                        '#stage1' : 
+                        '#stage2'
+                );
+            });
+        });
+            
     $('button#reload-page')
         .click(function(){
             window.location.href = window.location.href;
@@ -308,50 +318,59 @@
                 _('*reload end*: ' + this.attr('id'));
             });
         });
-        
     
-    window.i.push(
-    /*
-        // External src iframes
-        $.iframe('http://javascript.crockford.com/code.html')
-            .attr('id', 'i' + count++)
-            .appendTo('#stage1'),
+    $('button#add-injected')
+        .click(function(){
+            window.i.push(
+                // Injected iframes
+                $.iframe(
+                    '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color.</p>',
+                    function(){
+                        this
+                            .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
+                            .body().css({padding:'2.62em'})
+                    }
+                )
+                    .attr('id', 'i' + count++)
+                    .appendTo('#stage1'),
+                
+                $.iframe(
+                    '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\' document contents.</p>',
+                    {
+                        css:{
+                            backgroundColor:'#ccf',
+                            color:'#336'
+                        }
+                    }
+                )
+                    .attr('id', 'i' + count++)
+                    .appendTo('#stage1')
+            );
             
-        
-        $.iframe('http://www.google.it')
-            .attr('id', 'i' + count++)
-            .appendTo('#stage1'),
-         */
-            
-        // Injected iframes
-        $.iframe(
-            '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color.</p>',
-            function(){
-                this
-                    .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
-                    .body().css({padding:'2.62em'})
-            }
-        )
-            .attr('id', 'i' + count++)
-            .appendTo('#stage1'),
-            
-    /**/
-        $.iframe(
-            '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\' document contents.</p>',
-            {
-                css:{
-                    backgroundColor:'#ccf',
-                    color:'#336'
-                }
-            }
-        )
-            .attr('id', 'i' + count++)
-            .appendTo('#stage1')
-    );
+            $.each(window.i.slice(-2), function(i, iframe){
+                window['i' + i] = iframe;
+            });
+        });
     
-    $.each(window.i, function(i, iframe){
-        window['i' + i] = iframe;
-    });
+    $('button#add-external')
+        .click(function(){
+            window.i.push(
+                // External src iframes
+                $.iframe('http://javascript.crockford.com/code.html')
+                    .attr('id', 'i' + count++)
+                    .appendTo('#stage1'),
+                    
+                
+                $.iframe('http://www.google.it')
+                    .attr('id', 'i' + count++)
+                    .appendTo('#stage1')
+            );
+            
+            $.each(window.i.slice(-2), function(i, iframe){
+                window['i' + i] = iframe;
+            });
+        });
+    
 	
 	 
 	/*
