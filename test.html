@@ -140,7 +140,7 @@
         <dd id="browser"><textarea class="user-agent" rows="3" cols="42"></textarea></dd>
     
         <dt>Append method</dt>
-        <dd id="append-method"></dd>
+        <dd id="append-method">Testing...</dd>
     </dl>
   </div>
   
@@ -260,26 +260,36 @@
     });
 
     // Determine appendMethod
-    var stealth = $('<div></div>')
-        .addClass('stealth')
-        .appendTo('body');
-    var iHidden = $.iframe('<p>blah</p>', {attr:{id:'iHidden'}})
-        .one('load', function(){
-            this.appendTo(stealth);
-        })
-        .one('restore', function(ev, appendMethod){
-            $('#append-method').text(appendMethod);
-            stealth.remove();
-            delete stealth;
-            delete iHidden;
-        })
-    //    .appendTo(stealth);
-    window.setTimeout(function(){
-        if (!$('#append-method').text()){
-            $('#append-method').text("None applied");
-        }
-    }, 2500);
-//return;
+    var
+        testingMsg = 'Testing...',
+        timeoutMsg = 'None applied',
+        timeout = 2500,
+    
+        timingOut = window.setTimeout(function(){
+            if ($('#append-method').text() === testingMsg){
+                $('#append-method').text(timeoutMsg);
+            }
+        }, timeout),
+        
+        stealth = $('<div></div>')
+            .addClass('stealth')
+            .appendTo('body'),
+        
+        iHidden = $.iframe('<p>blah</p>', {attr:{id:'iHidden'}})
+            .one('load', function(){
+                this.appendTo(stealth);
+            })
+            .one('restore', function(ev, appendMethod){
+                window.clearTimeout(timingOut);
+                $('#append-method').text(appendMethod);
+                stealth.remove();
+                delete stealth;
+                delete iHidden;
+            })
+            .appendTo(stealth);
+    
+    
+    $('#append-method').text(testingMsg);
 
 
 
