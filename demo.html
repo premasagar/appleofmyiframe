@@ -110,6 +110,7 @@
   <div id="do">
       <div id="addiframes">
             <h2>Add iframes</h2>
+            <p class="desc">Start here</p>
             <div class="controls">
             <ol>
                 <li><button id="add-injected">+ injected iframes</button></li>
@@ -307,10 +308,10 @@
         .click(function(){
             pushIframes(
                 $.iframe(
-                    '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color. <a href="http://google.com">This link opens in the host window</a>.</p>',
+                    '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color. <a href="http://google.com">This link should open in the host window.</a></p>',
                     function(){
                         this
-                            .style('p {background-color:#336; color:#ccf; font-size:1.6em;} a {color:#fff;}')
+                            .style('p {background-color:#336; color:#ccf; font-size:1.6em;} a {color:#fff; display:block; margin-top:0.38em;}')
                             .body().css({padding:'2.62em'})
                     }
                 )
@@ -318,7 +319,7 @@
                     .appendTo('#here'),
                 
                 $.iframe(
-                    '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\' document contents.</p>',
+                    '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\'s document contents.</p>',
                     {
                         css:{
                             backgroundColor:'#ccf',
