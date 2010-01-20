@@ -126,7 +126,7 @@
                         options = this.options(),
                         autowidth = options.autowidth,
                         autoheight = options.autoheight,
-                        fromReload;
+                        firstResize, fromReload;
                     
                     // If a url supplied, add it as the iframe src, to load the page
                     // NOTE: iframes intented to display external documents must have the src passed as the bodyContents arg, rather than setting the src later - or expect weirdness
@@ -186,6 +186,7 @@
                             // When iframe first added to the DOM, resize it, and set up event listeners to resize later
                             this
                                 .one('attachElement', function(){
+                                    firstResize = true;
                                     this.css('visibility', 'hidden'); // hide iframe until it is resized
                                 })
                             
@@ -195,9 +196,11 @@
                                         if (!resize.resizing){
                                             resize.resizing = true;
                                             win.setTimeout(function(){
-                                                aomi
-                                                    .resize(autowidth, autoheight)
-                                                    .css('visibility', 'visible'); // show iframe again
+                                                aomi.resize(autowidth, autoheight);
+                                                if (firstResize){
+                                                    firstResize = false;
+                                                    aomi.css('visibility', 'visible'); // show iframe again
+                                                }
                                                 resize.resizing = false;
                                             }, options.resizeThrottle);
                                         }
