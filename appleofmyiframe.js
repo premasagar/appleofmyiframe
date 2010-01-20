@@ -192,7 +192,6 @@
                             
                                 .one('ready', function(){
                                     function resize(){
-                                        //var resize = arguments.callee;
                                         if (!resize.resizing){
                                             resize.resizing = true;
                                             win.setTimeout(function(){
@@ -259,7 +258,7 @@
             
                 $: function(arg){
                     var doc = this.document();
-                    return arg ? $(arg, doc) : doc;
+                    return arg ? $(arg, doc[0]) : doc;
                 },
                 
                 
@@ -301,7 +300,7 @@
                     event.trigger(type + '.' + ns, data, this);
                     return this;
                 },
-                
+                                
                 bind: function(type, callback){
                     event.add(this, type + '.' + ns, callback);
                     return this;
@@ -319,19 +318,6 @@
                     });
                 },
                 
-                live: function(selector, type, fn){
-		            var proxy = event.proxy(fn);
-		            proxy.guid += selector + type;         
-		            this.body()
-		                .bind(liveConvert(type, selector), selector, proxy);         
-		            return this;
-	            },
-	            
-	            die: function(selector, type, fn){
-		            this.body()
-		                .unbind(liveConvert(type, selector), fn ? {guid: fn.guid + selector + type} : null);
-		            return this;
-	            },
                 
                 /*
                 Examples:
@@ -471,7 +457,7 @@
                                     .title(true)
                                     
                                     // Let anchor links open pages in the default target
-                                    .live('a', 'click', function(){
+                                    .$('a').live('click', function(){
                                         if (!$(this).attr('target') && $(this).attr('href')){
                                             $(this).attr('target', options.target);
                                         }
@@ -702,6 +688,7 @@
 	                return this;
                 },
                 
+                // TODO: It may be necessary to restore any possible cached events on the document and htmlElement, e.g. via .data('events') property
                 restore: function(){
                     // Methods to try, in order. If all fail, then the iframe will re-initialize.
                     var
