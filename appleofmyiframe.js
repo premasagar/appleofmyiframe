@@ -503,6 +503,7 @@
                 
                 // Duplicate this AOMI object. This will essentially clone the iframe element, its document and all its settings, provided that they have only been manipulated via the AOMI API - e.g. by passing a function to the original constructor
                 // TODO: should _args() be able to return as an array, so we can do an apply() on $.iframe?
+                // TODO: Should this attempt to clone the current AOMI document's head and body elements?
                 clone: function(){
                     var args = this._args();
                     return $.iframe(args.headContents, args.bodyContents, this.options(), args.callback);
@@ -761,6 +762,7 @@
                     this
                         .css(options.css)
                         .attr(options.attr)
+                        .addClass(ns)
                         .attr('src', options.src);
                     
                     return this

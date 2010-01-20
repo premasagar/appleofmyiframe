@@ -293,12 +293,19 @@
             .appendTo(stealth);
 
 
-    // Add iframes
+    // Add iframes to global array window.i, and make each AOMI object available at i0, i1, i2, etc, for easy debugging
+    function pushIframes(){
+        $.each($.makeArray(arguments), function(i, iframe){
+            window.i.push(iframe);
+            window['i' + (window.i.length -1)] = iframe;
+        });
+    }
+    
     
     // Injected iframes
     $('button#add-injected')
         .click(function(){
-            var iframes = [
+            pushIframes(
                 $.iframe(
                     '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color. <a href="http://google.com">This link opens in the host window</a>.</p>',
                     function(){
@@ -321,12 +328,6 @@
                 )
                     .attr('id', 'i' + count++)
                     .appendTo('#here')
-            ];
-        
-            $.each(iframes, function(i, iframe){
-                    window.i.push(iframe);
-                    window['i' + (window.i.length - (iframes.length + i))] = iframe;
-                }
             );
         });
     
@@ -334,20 +335,14 @@
     // External src iframes
     $('button#add-external')
         .click(function(){
-            var iframes = [
-                    $.iframe('http://dharmafly.com')
-                        .attr('id', 'i' + count++)
-                        .appendTo('#here'),
-                        
-                    $.iframe('http://javascript.crockford.com/code.html')
-                        .attr('id', 'i' + count++)
-                        .appendTo('#here')
-                ];
-        
-            $.each(iframes, function(i, iframe){
-                    window.i.push(iframe);
-                    window['i' + (window.i.length - (iframes.length + i))] = iframe;
-                }
+            pushIframes(
+                $.iframe('http://dharmafly.com')
+                    .attr('id', 'i' + count++)
+                    .appendTo('#here'),
+                    
+                $.iframe('http://javascript.crockford.com/code.html')
+                    .attr('id', 'i' + count++)
+                    .appendTo('#here')
             );
         });
 
