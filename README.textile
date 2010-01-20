@@ -15,7 +15,7 @@ Run @demo.html@, in the repository.
 
 h1. Overview
 
-iframes are commonly used to embed external documents in a web page (via the element's @src@ attribute). However, they are rarely used for another purpose: to create a brand new document on-the-fly, via JavaScript within a host document. This can be useful, for example, to protect the iframe document's contents from the CSS and JavaScript contained within the host document - for example, when creating widgets and other kinds of modular user interfaces.
+iframes are commonly used to embed external documents in a web page (via the element's @src@ attribute). . They can also be used to create a brand new document on-the-fly, via JavaScript within a host document. This can be useful, for example, to protect the iframe document's contents from the CSS and JavaScript contained within the host document - for example, when creating widgets and other kinds of modular user interfaces.
 
 The standard JavaScript API for achieving this is pretty convoluted and fragile, and the behaviour of iframe documents can vary wildly between different browsers. As a result, it has been tricky to take advantage of the potential for this technique.
 
