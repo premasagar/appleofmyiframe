@@ -279,7 +279,7 @@
             .one('load', function(){
                 this.appendTo(stealth);
             })
-            .one('restore', function(ev, appendMethod){
+            .one('restore', function(ev, appendMethod){ // TODO: Opera 10.10 (Win) not calling this
                 window.clearTimeout(timingOut);
                 $('#append-method').text(appendMethod);
                 stealth.remove();
@@ -353,6 +353,7 @@
 
     
     // Tests
+    // TODO: Opera 10.10 (Win): top injected iframe collapse on first move (and fine thereafter)
     $('button#move-iframes')
         .click(function(){
             $('#here iframe, #there iframe').each(function(){
