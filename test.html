@@ -79,16 +79,16 @@
         margin-right:0.62em;
         border:1px solid #ccc;
     }
-    #stage1 {
+    #here {
         clear:both;
         background-color:#fff;
         border-color:#336;
     }
-    #stage2 {
+    #there {
         background-color:#336;
         border-color:#ccf;
     }
-    #stage2 h2 {
+    #there h2 {
         color:#ccf;
     }
     iframe {
@@ -138,11 +138,11 @@
     </dl>
   </div>
   
-  <div id="stage1" class="stage">
-    <h2>Over here</h2>
+  <div id="here" class="stage">
+    <h2>Here</h2>
   </div>
-  <div id="stage2" class="stage">
-    <h2>Over there</h2>
+  <div id="there" class="stage">
+    <h2>There</h2>
   </div>
   
   <script>
@@ -292,7 +292,7 @@
                     }
                 )
                     .attr('id', 'i' + count++)
-                    .appendTo('#stage1'),
+                    .appendTo('#here'),
                 
                 $.iframe(
                     '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\' document contents.</p>',
@@ -304,7 +304,7 @@
                     }
                 )
                     .attr('id', 'i' + count++)
-                    .appendTo('#stage1')
+                    .appendTo('#here')
             ];
         
             $.each(iframes, function(i, iframe){
@@ -321,11 +321,11 @@
             var iframes = [
                     $.iframe('http://javascript.crockford.com/code.html')
                         .attr('id', 'i' + count++)
-                        .appendTo('#stage1'),
+                        .appendTo('#here'),
                     
                     $.iframe('http://www.google.it')
                         .attr('id', 'i' + count++)
-                        .appendTo('#stage1')
+                        .appendTo('#here')
                 ];
         
             $.each(iframes, function(i, iframe){
@@ -339,12 +339,12 @@
     // Tests
     $('button#move-iframes')
         .click(function(){
-            $('#stage1 iframe, #stage2 iframe').each(function(){
+            $('#here iframe, #there iframe').each(function(){
                 _('*moving iframe*: ' + $(this).attr('id'));
                 $(this).appendTo(
-                    $(this).parent('#stage2').length ?
-                        '#stage1' : 
-                        '#stage2'
+                    $(this).parent('#there').length ?
+                        '#here' : 
+                        '#there'
                 );
             });
         });
