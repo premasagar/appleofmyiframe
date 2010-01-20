@@ -300,10 +300,10 @@
         .click(function(){
             var iframes = [
                 $.iframe(
-                    '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color. <a href="http://google.com">A link</a>.</p>',
+                    '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color. <a href="http://google.com">This link opens in the host window</a>.</p>',
                     function(){
                         this
-                            .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
+                            .style('p {background-color:#336; color:#ccf; font-size:1.6em;} a {color:#fff;}')
                             .body().css({padding:'2.62em'})
                     }
                 )
