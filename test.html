@@ -274,7 +274,69 @@
         }
     }, 2500);
 //return;
-  
+
+
+
+    // Add iframes
+    
+    // Injected iframes
+    $('button#add-injected')
+        .click(function(){
+            var iframes = [
+                $.iframe(
+                    '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color.</p>',
+                    function(){
+                        this
+                            .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
+                            .body().css({padding:'2.62em'})
+                    }
+                )
+                    .attr('id', 'i' + count++)
+                    .appendTo('#stage1'),
+                
+                $.iframe(
+                    '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\' document contents.</p>',
+                    {
+                        css:{
+                            backgroundColor:'#ccf',
+                            color:'#336'
+                        }
+                    }
+                )
+                    .attr('id', 'i' + count++)
+                    .appendTo('#stage1')
+            ];
+        
+            $.each(iframes, function(i, iframe){
+                    window.i.push(iframe);
+                    window['i' + (window.i.length - (iframes.length + i))] = iframe;
+                }
+            );
+        });
+    
+    
+    // External src iframes
+    $('button#add-external')
+        .click(function(){
+            var iframes = [
+                    $.iframe('http://javascript.crockford.com/code.html')
+                        .attr('id', 'i' + count++)
+                        .appendTo('#stage1'),
+                    
+                    $.iframe('http://www.google.it')
+                        .attr('id', 'i' + count++)
+                        .appendTo('#stage1')
+                ];
+        
+            $.each(iframes, function(i, iframe){
+                    window.i.push(iframe);
+                    window['i' + (window.i.length - (iframes.length + i))] = iframe;
+                }
+            );
+        });
+
+    
+    // Tests
     $('button#move-iframes')
         .click(function(){
             $('#stage1 iframe, #stage2 iframe').each(function(){
@@ -285,11 +347,6 @@
                         '#stage2'
                 );
             });
-        });
-            
-    $('button#reload-page')
-        .click(function(){
-            window.location.href = window.location.href;
         });
         
     $('button#repaint-iframes')
@@ -318,59 +375,11 @@
                 _('*reload end*: ' + this.attr('id'));
             });
         });
-    
-    $('button#add-injected')
-        .click(function(){
-            window.i.push(
-                // Injected iframes
-                $.iframe(
-                    '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color.</p>',
-                    function(){
-                        this
-                            .style('p {background-color:#336; color:#ccf; font-size:1.6em;}')
-                            .body().css({padding:'2.62em'})
-                    }
-                )
-                    .attr('id', 'i' + count++)
-                    .appendTo('#stage1'),
-                
-                $.iframe(
-                    '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\' document contents.</p>',
-                    {
-                        css:{
-                            backgroundColor:'#ccf',
-                            color:'#336'
-                        }
-                    }
-                )
-                    .attr('id', 'i' + count++)
-                    .appendTo('#stage1')
-            );
             
-            $.each(window.i.slice(-2), function(i, iframe){
-                window['i' + i] = iframe;
-            });
-        });
-    
-    $('button#add-external')
+    $('button#reload-page')
         .click(function(){
-            window.i.push(
-                // External src iframes
-                $.iframe('http://javascript.crockford.com/code.html')
-                    .attr('id', 'i' + count++)
-                    .appendTo('#stage1'),
-                    
-                
-                $.iframe('http://www.google.it')
-                    .attr('id', 'i' + count++)
-                    .appendTo('#stage1')
-            );
-            
-            $.each(window.i.slice(-2), function(i, iframe){
-                window['i' + i] = iframe;
-            });
+            window.location.href = window.location.href;
         });
-    
 	
 	 
 	/*
