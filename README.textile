@@ -9,7 +9,8 @@
 
 
 h1. Quick demo
-Run demo.html
+
+Run @demo.html@, in the repository
 
 
 h1. Overview
