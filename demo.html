@@ -155,74 +155,8 @@
   <script>
   // Console logger
   // http://github.com/premasagar/console
-  var
-  _ = (function(){
-	    var
-	        win = window,
-	        ua = win.navigator.userAgent,
-	        console = win.console,
-	        opera = win.opera,
-	        debug;
-	    
-        // Doesn't support console API
-	    if (!console){
-	        // Opera 
-	        return (opera && opera.postError) ?
-                 function(){
-                     var i, argLen, log = opera.postError, args = arguments, arg, subArgs;
-                     log(args);
-                     
-                     argLen = args.length;
-		             for (i=0; i < argLen; i++){
-		                 arg = args[i];
-		                 if (typeof arg === 'object' && arg !== null){
-		                    subArgs = [];
-		                    for (prop in arg){
-		                        try {
-		                            if (arg.hasOwnProperty(prop)){
-		                                subArgs.push(prop + ': ' + arg[prop]);
-		                            }
-		                        }
-		                        catch(e){}
-		                    }
-		                    log('----subArgs: ' + subArgs);
-		                 }
-		             }
-                 } :
-                 function(){};
-	    }
-	    // Temporary for WebKit, while its console has a bug in calling debug directly or log.apply
-	    else if (/webkit/i.test(ua)){	    
-            return function(){
-                var i, argLen, args = arguments, indent = '';
-                argLen = args.length;
-		        for (i=0; i < argLen; i++){
-			        console.log(indent + args[i]);
-                    indent = '---- ';
-		        }
-            };
-        }
-        else {
-	        debug = console.debug;
-	        return debug ? // FF Firebug
-		        debug :
-		        function(){
-			        var i, argLen, log = console.log, args = arguments, indent = '';
-			        if (log){ // WebKit
-				        if (typeof log.apply === 'function'){
-					        log.apply(console, args);
-				        }
-				        else { // IE8
-					        argLen = args.length;
-					        for (i=0; i < argLen; i++){
-						        log(indent + args[i]);
-                                indent = '---- ';
-					        }
-				        }
-			        }
-		        };
-		}
-    })();
+  var _=(function(){var f=window,k=f.navigator.userAgent,g=f.console,i=f.opera;if(g)if(/webkit/i.test(k))return function(){var a,e,b=arguments,c="";e=b.length;for(a=0;a<e;a++){g.log(c+b[a]);c="---- "}};else return(f=g.a)?f:function(){var a,e,b=g.log,c=arguments,d="";if(b)if(typeof b.apply==="function")b.apply(g,c);else{e=c.length;for(a=0;a<e;a++){b(d+c[a]);d="---- "}}};else return i&&i.postError?function(){var a,e,b=i.postError,c=arguments,d,j,h;b(c);e=c.length;for(a=0;a<e;a++){d=c[a];if(typeof d==="object"&&
+d!==null){j=[];for(h in d)try{d.hasOwnProperty(h)&&j.push(h+": "+d[h])}catch(l){}b("----subArgs: "+j)}}}:function(){}})();
     
     // ****************************************
     
