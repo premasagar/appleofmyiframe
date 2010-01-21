@@ -42,11 +42,7 @@
     }
     function isJQuery(obj){
         return obj && !!obj.jquery;
-    }
-    // From jQuery; required for .live() and .die() methods
-    function liveConvert(type, selector){
-        return ["live", type, selector.replace(/\./g, "`").replace(/ /g, "|")].join(".");
-    }    
+    }  
     // Utility class to create jquery extension class easily
     // Mixin the passed argument with a clone of the jQuery prototype
     function JqueryClass(proto){
