@@ -38,6 +38,7 @@
 **/
 (function($){
     function throttle(handler, interval, defer){
+        var context = this;
         interval = interval || 250; // milliseconds
         // defer is false by default
         
@@ -47,25 +48,25 @@
                 
                 window.setTimeout(function(){
                     if (defer){
-                        handler.call(this);
+                        handler.call(context);
                     }                            
                     handler.throttling = false;
                 }, interval);
                 
                 if (!defer){
-                    handler.call(this);
+                    handler.call(context);
                 }
             }
-            return this;
+            return context;
         };
     }
 
     // jQuery.throttle
-    $['throttle'] = throttle;
+    $.throttle = throttle;
     
     // jQuery(elem).throttle
-    $['fn']['throttle'] = function(eventType, handler, interval, defer){
-        return $(this)['bind'](eventType, throttle(handler, interval, defer));
+    $.fn.throttle = function(eventType, handler, interval, defer){
+        return $(this).bind(eventType, throttle(handler, interval, defer));
     };
 }(jQuery));
 // **
