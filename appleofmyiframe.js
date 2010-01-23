@@ -66,7 +66,7 @@
     // jQuery(elem).throttle
     $['fn']['throttle'] = function(eventType, handler, interval, defer){
         return $(this)['bind'](eventType, throttle(handler, interval, defer));
-    }
+    };
 }(jQuery));
 // **
 
