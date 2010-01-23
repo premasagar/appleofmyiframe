@@ -237,9 +237,8 @@
                                         }
                                     }, options.resizeThrottle, true);
                                     
-                                    $(win).resize(resize);
                                     
-                                    // Bind for later                                    
+                                    // Bind for later
                                     this
                                         .bind('manipulateHead', function(){ // TODO: For some reason (presumably related to the bind method), we need to pass this anonymous function, and not simply .bind('manipulateHead', resize) - else the callback won't fire
                                             return resize();
@@ -251,6 +250,8 @@
                                         .load(function(){ // NOTE: We resize on 'ready', so that the dimensions are in place for any custom 'ready' callbacks, and then on 'load', after any custom ready callbacks
                                             return resize();
                                         });
+                                    
+                                    $(win).resize(resize);
                                 });
                         }
                         
