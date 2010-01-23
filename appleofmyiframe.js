@@ -13,7 +13,7 @@
 
 *//*
 
-    requires jQuery (so far only tested with jQuery v1.3.2)
+    requires jQuery (best with jQuery v1.4+)
     creates methods:
         jQuery.iframe()
         jQuery(elem).intoIframe()
@@ -31,6 +31,46 @@
 */
 
 'use strict';
+
+/**
+* Throttle
+*   github.com/premasagar/throttle
+**/
+(function($){
+    function throttle(handler, interval, defer){
+        interval = interval || 250; // milliseconds
+        // defer is false by default
+        
+        return function(){
+            if (!handler.throttling){
+                handler.throttling = true;
+                
+                window.setTimeout(function(){
+                    if (defer){
+                        handler.call(this);
+                    }                            
+                    handler.throttling = false;
+                }, interval);
+                
+                if (!defer){
+                    handler.call(this);
+                }
+            }
+            return this;
+        };
+    }
+
+    // jQuery.throttle
+    $['throttle'] = throttle;
+    
+    // jQuery(elem).throttle
+    $['fn']['throttle'] = function(eventType, handler, interval, defer){
+        return $(this)['bind'](eventType, throttle(handler, interval, defer));
+    }
+}(jQuery));
+// **
+
+
 
 (function($){
     // Anon and on
@@ -187,24 +227,20 @@
                                 })
                             
                                 .one('ready', function(){
-                                    function resize(){
-                                        if (!resize.resizing){
-                                            resize.resizing = true;
-                                            win.setTimeout(function(){
-                                                aomi.resize(autowidth, autoheight);
-                                                if (firstResize){
-                                                    firstResize = false;
-                                                    aomi.css('visibility', 'visible'); // show iframe again
-                                                }
-                                                resize.resizing = false;
-                                            }, options.resizeThrottle);
+                                    // Throttle the interval between iframe resize actions, and that between responses to the global window's 'resize' event
+                                    var resize = $.throttle(function(){
+                                        aomi.resize(autowidth, autoheight);
+                                        
+                                        if (firstResize){
+                                            firstResize = false;
+                                            aomi.css('visibility', 'visible'); // show iframe again
                                         }
-                                        return aomi;
-                                    }
+                                    }, options.resizeThrottle, true);
                                     
-                                    // Resize now
-                                    resize()
-                                        // Bind for later
+                                    $(win).resize(resize);
+                                    
+                                    // Bind for later                                    
+                                    this
                                         .bind('manipulateHead', function(){ // TODO: For some reason (presumably related to the bind method), we need to pass this anonymous function, and not simply .bind('manipulateHead', resize) - else the callback won't fire
                                             return resize();
                                         })
@@ -215,9 +251,6 @@
                                         .load(function(){ // NOTE: We resize on 'ready', so that the dimensions are in place for any custom 'ready' callbacks, and then on 'load', after any custom ready callbacks
                                             return resize();
                                         });
-                            
-                                    // Global window resizing
-                                    $(win).resize(resize);
                                 });
                         }
                         
