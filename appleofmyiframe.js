@@ -115,10 +115,8 @@
         browser = $.browser,
         msie = browser.msie,
         ie6 = (msie && win.parseInt(browser.version, 10) === 6),
-        opera = browser.opera,
         
         // Browser behaviour booleans
-        loadTriggeredOnDocumentClose = opera || msie, // TODO: verify this, with different browser versions
         documentDestroyedOnIframeMove = !msie,
         externalIframesInvisibleOnAppend = ie6,
         
@@ -198,13 +196,7 @@
                                             // NOTE: We do this after the document is written, because browsers differ in whether they trigger an iframe load event after the doc is written. So, we manually trigger the event for all browsers.
                                             ._iframeLoad(function(){
                                                 aomi.trigger('load');
-                                            });
-                                        
-                                        // Normalise browser event triggers by triggering load event, if not triggered by the browser
-                                        if (!loadTriggeredOnDocumentClose){
-                                            aomi.trigger('load');
-                                        }
-                                        
+                                            });                                        
                                     }
                                     else if (documentDestroyedOnIframeMove){
                                         aomi.reload();
@@ -257,8 +249,7 @@
                                     if (!autowidth){
                                         // respond to browser window resizing
                                         $(win).resize(resize);
-                                    }
-                                    
+                                    }                                    
                                     // TODO: Is it worth resizing the iframe whenever any of its contents is manipulated, e.g. by listening to DOM mutation events from within the document?
                                 });
                         }
@@ -405,7 +396,8 @@
                             // Apply the cached options & args
                             ._args(true)
                             // Trigger the 'ready' event, which is analogous to the $().ready() event for the global document
-                            .trigger('ready');
+                            .trigger('ready')
+                            .trigger('load');
                     }
                     // Doc not ready, so apply arguments at next load event
                     else {
@@ -450,8 +442,7 @@
                             // Call the callback on the next 'ready' event
                             .one('ready', argsCache.callback);
                     }
-                    else {
-                    
+                    else {                    
                         // All arguments are optional. Determine which were supplied.
                         $.each(args.reverse(), function(i, arg){
                             if (!found.callback && $.isFunction(arg)){
@@ -603,7 +594,9 @@
                             if (emptyFirst){
                                 head.empty();
                             }
-                            head[method](contents);
+                            if (contents){
+                                head[method](contents);
+                            }
                             this.trigger('manipulateHead', method);
                         }
                         // Document not active because iframe out of the DOM. Defer till the next 'load' event.
@@ -622,10 +615,11 @@
                     if (typeof contents !== 'undefined' && contents !== false){
                         if (body.length){ // TODO: Perhaps this should also check if the 'ready' event has ever fired - e.g. in situations where iframe has just been added to the DOM, but has not yet loaded
                             if (emptyFirst){
-                                body.empty();
+                                this.empty();
                             }
-                            this
-                                .append(contents);
+                            if (contents){
+                                this.append(contents);
+                            }
                         }
                         // Document not active because iframe out of the DOM. Defer till the next 'load' event.
                         else {
@@ -912,7 +906,8 @@
                                 'prepend',
                                 'html',
                                 'text',
-                                'wrapInner'
+                                'wrapInner',
+                                'empty'
                             ],
                             
                             wrapper: function(method){

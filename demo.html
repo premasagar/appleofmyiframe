@@ -242,7 +242,7 @@ d!==null){j=[];for(h in d)try{d.hasOwnProperty(h)&&j.push(h+": "+d[h])}catch(l){
         .click(function(){
             pushIframes(
                 $.iframe(
-                    '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Text in the iframe document has styling, including a background color. <a href="http://google.com">This link should open in the host window.</a></p>',
+                    '<p>An injected iframe. No body background color is set on the iframe - it is left transparent. Styles (e.g. background-color) are applied after the iframe loads. <a href="http://google.com">This link should open in the host window.</a></p>',
                     function(){
                         this
                             .style('p {background-color:#336; color:#ccf; font-size:1.6em;} a {color:#fff; display:block; margin-top:0.38em;}')
@@ -253,7 +253,8 @@ d!==null){j=[];for(h in d)try{d.hasOwnProperty(h)&&j.push(h+": "+d[h])}catch(l){
                     .appendTo('#here'),
                 
                 $.iframe(
-                    '<p>An injected iframe. A background color set on the iframe, but no styles are set on the iframe\'s document contents.</p>',
+                    '<style>p {color:#c00;}</style>',                
+                    '<p>An injected iframe. A background color set on the iframe element. Styles (font color) is applied via a style element appended to the iframe\'s head.</p>',
                     {
                         css:{
                             backgroundColor:'#ccf',
