@@ -1,8 +1,11 @@
+'use strict';
+
 /*!
 * AppleOfMyIframe
-**
-    JavaScript library for creating & manipulating iframe documents on-the-fly
-        github.com/premasagar/appleofmyiframe
+*   github.com/premasagar/appleofmyiframe
+*
+*//*
+    JavaScript library for creating & manipulating iframe documents on-the-fly     
 
     by Premasagar Rose
         premasagar.com
@@ -11,7 +14,6 @@
     license:
         opensource.org/licenses/mit-license.php
 
-*//*
 
     requires jQuery (best with jQuery v1.4+)
     creates methods:
@@ -30,47 +32,47 @@
 
 */
 
-'use strict';
-
-/**
-* Throttle
-*   github.com/premasagar/throttle
-**/
-(function($){
-    function throttle(handler, interval, defer){
-        var context = this;
-        interval = interval || 250; // milliseconds
-        // defer is false by default
-        
-        return function(){
-            if (!handler.throttling){
-                handler.throttling = true;
-                
-                window.setTimeout(function(){
-                    if (defer){
+    /*
+    * Throttle
+    *   github.com/premasagar/throttle
+    *
+    */
+    (function($){
+        function throttle(handler, interval, defer){
+            var context = this;
+            interval = interval || 250; // milliseconds
+            // defer is false by default
+            
+            return function(){
+                if (!handler.throttling){
+                    handler.throttling = true;
+                    
+                    window.setTimeout(function(){
+                        if (defer){
+                            handler.call(context);
+                        }                            
+                        handler.throttling = false;
+                    }, interval);
+                    
+                    if (!defer){
                         handler.call(context);
-                    }                            
-                    handler.throttling = false;
-                }, interval);
-                
-                if (!defer){
-                    handler.call(context);
+                    }
                 }
-            }
-            return context;
+                return context;
+            };
+        }
+
+        // jQuery.throttle
+        $.throttle = throttle;
+        
+        // jQuery(elem).throttle
+        $.fn.throttle = function(eventType, handler, interval, defer){
+            return $(this).bind(eventType, throttle(handler, interval, defer));
         };
-    }
+    }(jQuery));
 
-    // jQuery.throttle
-    $.throttle = throttle;
-    
-    // jQuery(elem).throttle
-    $.fn.throttle = function(eventType, handler, interval, defer){
-        return $(this).bind(eventType, throttle(handler, interval, defer));
-    };
-}(jQuery));
+
 // **
-
 
 
 (function($){
@@ -247,12 +249,17 @@
                                         .bind('manipulateBody', function(){
                                             return resize();
                                         })
-                                        // TODO: Ideally, we'd resize the iframe whenever any of its content is manipulated, e.g. by listening to DOM mutation events on the contents
                                         .load(function(){ // NOTE: We resize on 'ready', so that the dimensions are in place for any custom 'ready' callbacks, and then on 'load', after any custom ready callbacks
                                             return resize();
                                         });
                                     
-                                    $(win).resize(resize);
+                                    // If we're not matching the iframe element's width to that of the iframe body's contents (instead we're letting the element stretch to fill its parent node, via css width:100%)
+                                    if (!autowidth){
+                                        // respond to browser window resizing
+                                        $(win).resize(resize);
+                                    }
+                                    
+                                    // TODO: Is it worth resizing the iframe whenever any of its contents is manipulated, e.g. by listening to DOM mutation events from within the document?
                                 });
                         }
                         
@@ -943,7 +950,7 @@
                 function(headContents, bodyContents, options, callback){
                     return new AppleOfMyIframe(headContents, bodyContents, options, callback);
                 },
-                {aomi: version} // script version number - for 3rd party scripts to verify that jQuery.iframe is created by AppleOfMyIframe, and to check the script version
+                {aomi: version, debug:_} // script version number - for 3rd party scripts to verify that jQuery.iframe is created by AppleOfMyIframe, and to check the script version
             ),
             fn: {
                 // TODO: Allow multiple elements in a collection to be replaced with iframes, e.g. $('.toReplace').intoIframe()
