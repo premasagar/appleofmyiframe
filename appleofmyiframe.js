@@ -950,7 +950,7 @@
                 function(headContents, bodyContents, options, callback){
                     return new AppleOfMyIframe(headContents, bodyContents, options, callback);
                 },
-                {aomi: version, debug:_} // script version number - for 3rd party scripts to verify that jQuery.iframe is created by AppleOfMyIframe, and to check the script version
+                {aomi: version} // script version number - for 3rd party scripts to verify that jQuery.iframe is created by AppleOfMyIframe, and to check the script version
             ),
             fn: {
                 // TODO: Allow multiple elements in a collection to be replaced with iframes, e.g. $('.toReplace').intoIframe()
