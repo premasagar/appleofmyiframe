@@ -11,17 +11,18 @@
 h1. Quick demo
 
 Run @demo.html@, in the repository.
+Any problems? "Read the wiki":http://wiki.github.com/premasagar/appleofmyiframe/ or "contact Prem":http://dharmafly.com/contact .
 
 
 h1. Overview
 
-iframes are commonly used to embed external documents in a web page (via the element's @src@ attribute). . They can also be used to create a brand new document on-the-fly, via JavaScript within a host document. This can be useful, for example, to protect the iframe document's contents from the CSS and JavaScript contained within the host document - for example, when creating widgets and other kinds of modular user interfaces.
+iframes are commonly used to embed external documents into a web page (via the element's @src@ attribute). However, they can also be used to create an entirely new document on-the-fly, via JavaScript in the host document. This can be useful, for example, to shield the iframe's contents from the CSS and JavaScript contained within the host document, such as when creating widgets and other kinds of modules.
 
-The standard JavaScript API for achieving this is pretty convoluted and fragile, and the behaviour of iframe documents can vary wildly between different browsers. As a result, it has been tricky to take advantage of the potential for this technique.
+The standard JavaScript API for working with iframes is pretty convoluted and fragile, and the behaviour of iframe documents can vary wildly between browsers. As a result, it has been tricky to take advantage of the potential for the technique.
 
-As an example of this quirky behaviour: when an iframe element is created, and a document created within it, and some content put into the document's body, if the iframe element is moved to a different part of the host document's DOM (e.g. if it is drag-and-dropped, or shifted to a new position), then the iframe's document is completely destroyed, and its contents is lost. That is, except in Interet Explorer, which has its own quirks.
+As an example of this quirky behaviour: when an iframe element is created, and some content is put into the iframe's document, if the iframe element is moved to a different part of the host DOM (e.g. if it is drag-and-dropped, like an "iGoogle":http://www.google.com/ig widget, or shifted to a new position via JavaScript), then the iframe's document is completely destroyed, and its contents is lost. (Except when using Internet Explorer, but then, that has its own quirks).
 
-AppleOfMyIframe aims to smooth over all these differences between browsers, and bring iframe documents closer to being a first-class citizen in the host document's DOM. All with a jQuery style of simple, intuitive, chainable methods.
+AppleOfMyIframe provides a clean and simple API for manipulating iframe documents, and smooths over these cross-browser differences. The API brings iframe contents closer to the experience of manipulating &lt;div&gt elements and other first-class citizens of the host DOM, with the jQuery style of simple, intuitive, chainable methods.
 
 
 h1. jQuery methods
