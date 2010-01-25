@@ -364,7 +364,6 @@
                 */
                 
                 // TODO: Should the iframe have visibility:hidden at first, then show it on load? - this may make the appearance and first rendering smoother
-                
                 document: function(){
                     var
                         args = $.makeArray(arguments),
@@ -437,6 +436,8 @@
                         // apply cached options and constructor arguments
                         this
                             .options(true)
+                            // TODO: This will empty the head, overwriting the title option set on the previous line. Can the two lines be swapped?
+                            // TODO: Do we need to call head() if headContents is blank? Should we empty the head, if there is no headContents?
                             .head(argsCache.headContents, true)
                             .body(argsCache.bodyContents, true)
                             // Call the callback on the next 'ready' event
