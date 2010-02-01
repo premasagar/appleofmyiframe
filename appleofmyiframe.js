@@ -8,21 +8,20 @@
     JavaScript library for creating & manipulating iframe documents on-the-fly     
 
     by Premasagar Rose
-        premasagar.com
         dharmafly.com
 
-    license:
+    license
         opensource.org/licenses/mit-license.php
 
 
     requires jQuery (best with jQuery v1.4+)
-    creates methods:
+    creates methods
         jQuery.iframe()
         jQuery(elem).intoIframe()
         
     **
     
-    contributors:
+    contributors
         Alastair James: github.com/onewheelgood
         Jonathan Lister: github.com/jayfresh
     
@@ -34,7 +33,7 @@
 
     /*
     * Throttle
-    *   github.com/premasagar/throttle
+    *   github.com/premasagar/mishmash/tree/master/throttle/
     *
     */
     (function($){
