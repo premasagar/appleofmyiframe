@@ -166,6 +166,8 @@
                     
                     // If a url supplied, add it as the iframe src, to load the page
                     // NOTE: iframes intented to display external documents must have the src passed as the bodyContents arg, rather than setting the src later - or expect weirdness
+                    
+                    // TODO: Possible change: don't accept url as bodyContents arg. Instead include src in options attribute. bodyContents and headContents are still optional in such a case - when those args are present, and the src attribute is html from a trusted domain, then the args will be used to append to the iframe document on load.
                     if (isUrl(args.bodyContents)){
                         options.src = args.bodyContents;
                         
