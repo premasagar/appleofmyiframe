@@ -337,7 +337,10 @@
                 },
                 
                 unbind: function(type, callback){
-                    event.remove(this, type + '.' + ns, callback);
+                    try { // TODO: Temp hack: seems to be bug in jQuery 1.4.2 that errors on open lightbox: a.removeEventListener is not a function
+                        event.remove(this, type + '.' + ns, callback);
+                    }
+                    catch(e){}
                     return this;
                 },
                 
