@@ -969,6 +969,9 @@
         }
     );
     
+    // Expose AOMI prototype to $.iframe.fn
+    $.iframe.fn = AppleOfMyIframe.prototype;
+    
 }(jQuery));
 
 /*jslint browser: true, devel: true, onevar: true, undef: true, eqeqeq: true, bitwise: true, regexp: true, strict: true, newcap: true, immed: true */
