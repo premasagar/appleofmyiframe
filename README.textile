@@ -58,7 +58,7 @@ bc. $.iframe(
     .appendTo('body');
 
 
-3. Load an external document, via its src url:
+3. Load an external document, via its url:
 
 bc. $.iframe('http://example.com')
     .appendTo('body');
