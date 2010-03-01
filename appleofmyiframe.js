@@ -492,10 +492,12 @@
                                     .title(true)
                                     
                                     // Let anchor links open pages in the default target
-                                    .$('a').live('click', function(){
-                                        if (!$(this).attr('target') && $(this).attr('href')){
-                                            $(this).attr('target', options.target);
-                                        }
+                                    .ready(function(){
+                                        this.$('a').live('click', function(){
+                                            if (!$(this).attr('target') && $(this).attr('href')){
+                                                $(this).attr('target', options.target);
+                                            }
+                                        });
                                     });
                             }
                             return this;
