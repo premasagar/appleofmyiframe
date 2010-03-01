@@ -269,7 +269,7 @@
                                         fromReload = false;
                                     }
                                     // Restore from cached nodes. Not restored if the body already has contents.
-                                    // TODO: Could it be problematic to not restore when there is already body contents? Should we check for head contents too?
+                                    // TODO: Could it be problematic to not restore when there is already body contents? Should we check if there's head contents too?
                                     else if (!this.body().children().length){
                                         this.restore();
                                     }
@@ -350,11 +350,12 @@
                 
                 
                 /*
-                Examples:
+                Ideas / Examples:
                 aomi.history(-1);
                 
-                aomi.load(0); // index in history
-                aomi.load(fn); // init? or bind callback for future 'load' events?
+                aomi.init(fn); // a function to do everything needed to initialise the widget; should be able to be re-run again at any time, to re-initialise the widget
+                aomi.load(0); // index number for screen history - e.g. url # fragments
+                aomi.load(fn); // bind callback for future 'load' events
                 => aomi.document(head, body); // etc
                 
                 $.iframe.doctypes = {
@@ -724,6 +725,7 @@
                 },
                 
                 // TODO: It may be necessary to restore any possible cached events on the document and htmlElement, e.g. via .data('events') property
+                // TODO: This needs to restore the originally set doctype. Currently, it won't do so, except when the append methods fail, and the reload() method is called (e.g. Opera 10.10). The function needs to re-write the document from scratch, but without disturbing any load() callbacks. Perhaps we need a stealth load - temporary turning off and turning on of the load event listener. It's fortunate that IE does not generally need to be restored when the iframe is moved in the DOM, because the loss of the doctype would be most obvious there, due to the Quirks mode box model.
                 restore: function(){
                     // Methods to try, in order. If all fail, then the iframe will re-initialize.
                     var
