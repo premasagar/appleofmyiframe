@@ -48,6 +48,7 @@ All arguments to @$.iframe()@ are optional.
 bc. $.iframe('<p>hello world</p>') // Add contents to the iframe's body
         .appendTo('body'); // Use any jQuery method here
 
+
 2. Insert HTML into the iframe's head *and* body:
 
 bc. $.iframe(
@@ -57,7 +58,13 @@ bc. $.iframe(
     .appendTo('body');
 
 
-3. Supply various options:
+3. Load an external document, via its url:
+
+bc. $.iframe('http://example.com')
+    .appendTo('body');
+
+
+4. Supply various options:
 
 bc. $.iframe(
     '<p>hello world</p>',
@@ -71,7 +78,7 @@ bc. $.iframe(
     .appendTo('body');
 
 
-4. Supply a callback function, for when the iframe first loads:
+5. Supply a callback function, for when the iframe first loads:
 
 bc. $.iframe(
     '<p>hello world</p>', // This argument could be omitted, and instead added to the callback function
@@ -82,7 +89,8 @@ bc. $.iframe(
 )
     .appendTo('body');
 
-5. Inject elements that are already in the host document into an iframe:
+
+6. Inject elements that are already in the host document into an iframe:
 
 bc. $('<p>Hello world</p>') // A standard jQuery collection
     .appendTo('body')
