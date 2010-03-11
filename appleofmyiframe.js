@@ -233,6 +233,16 @@
                                         }
                                     }, options.resizeThrottle, true);
                                     
+                                    // iframe container is not yet displayed. If the container has display:none (e.g. it's in a non-selected tab), then resize() can't determine the height of the body contents, and the iframe will have a height set to zero. So, we poll for the iframe container to be displayed. Hack!
+                                    // TODO: Does it matter that we stop polling once we're visible the first time? Are there practical situations where the body contents will be manipulated while the container is not displayed? Is that really our problem?
+                                    if (!this.is(':visible')){
+                                        var pollForVisibility = window.setInterval(function(){
+                                            if (aomi.is(':visible')){
+                                                resize();
+                                                window.clearInterval(pollForVisibility);
+                                            }
+                                        }, 1000);
+                                    }
                                     
                                     // Bind for later
                                     this
