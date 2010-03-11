@@ -224,7 +224,7 @@
                             
                                 .one('ready', function(){
                                     // Throttle the interval between iframe resize actions, and that between responses to the global window's 'resize' event
-                                    var resize, pollForVisibility;
+                                    var resize, parent, pollForVisibility;
                                     
                                     resize = $.throttle(function(){
                                         aomi.resize(autowidth, autoheight);
@@ -239,7 +239,7 @@
                                     // TODO: Does it matter that we stop polling once we're visible the first time? Are there practical situations where the body contents will be manipulated while the container is not displayed? Is that really our problem?
                                     if (!this.is(':visible')){
                                         pollForVisibility = win.setInterval(function(){
-                                            if (aomi.is(':visible')){
+                                            if (aomi.parent().is(':visible')){ // re-check parent in case iframe is moved in DOM?
                                                 resize();
                                                 win.clearInterval(pollForVisibility);
                                             }
