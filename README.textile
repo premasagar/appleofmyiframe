@@ -1,4 +1,4 @@
-"AppleOfMyIframe":http://github.com/premasagar/appleofmyiframe is a jQuery Plugin. It aims to provide a simple JavaScript API for the manipulation of iframe elements and their contents.
+"AppleOfMyIframe":http://github.com/premasagar/appleofmyiframe is a jQuery Plugin. It provides a simple JavaScript API for creating iframe elements, and injecting HTML into them. It allows manipulation of the iframe's contents in a similar way to jQuery's interactions with more common DOM elements.
 
 * by "Premasagar Rose":http://github.com/premasagar
 ** "premasagar.com":http://premasagar.com / "dharmafly.com":http://dharmafly.com
@@ -10,19 +10,33 @@
 
 h1. Quick demo
 
-Run @demo.html@, in the repository.
-Any problems? "Read the wiki":http://wiki.github.com/premasagar/appleofmyiframe/ or "contact Prem":http://dharmafly.com/contact .
+Clone the repository and run @demo.html@.
+"Read the wiki":http://wiki.github.com/premasagar/appleofmyiframe/ for the full API.
 
 
 h1. Overview
 
-iframes are commonly used to embed external documents into a web page (via the element's @src@ attribute). However, they can also be used to create an entirely new document on-the-fly, via JavaScript in the host document. This can be useful, for example, to shield the iframe's contents from the CSS and JavaScript contained within the host document, such as when creating widgets and other kinds of modules.
+iframes are commonly used to embed external documents into a web page (by adding the resource's URL to the iframe element's @src@ attribute). However, iframe can also be created from scratch by JavaScript, and have their HTML contents injected into them, without the need to load in any external resources. This allows an entirely scriptable document to be embedded within the host page, which is useful to self-contain and shield the iframe's contents from the CSS and JavaScript contained within the host document. This is handy when creating widgets and other kinds of modules.
 
-The standard JavaScript API for working with iframes is pretty convoluted and fragile, and the behaviour of iframe documents can vary wildly between browsers. As a result, it has been tricky to take advantage of the potential for the technique.
+See the "Sqwidget project":http://github.com/premasagar/sqwidget, which provides AppleOfMyIframe as an optional plugin, to automatically insert widget contents into an iframe document, on-the-fly.
 
-As an example of this quirky behaviour: when an iframe element is created, and some content is put into the iframe's document, if the iframe element is moved to a different part of the host DOM (e.g. if it is drag-and-dropped, like an "iGoogle":http://www.google.com/ig widget, or shifted to a new position via JavaScript), then the iframe's document is completely destroyed, and its contents is lost. (Except when using Internet Explorer, but then, that has its own quirks).
+For an alternative approach to CSS sandboxing, see the "CleanSlate project":ttp://github.com/premasagar/cleanslate, which is based on a reset stylesheet composed entirely of @!important@ rules.
 
-AppleOfMyIframe provides a clean and simple API for manipulating iframe documents, and smooths over these cross-browser differences. The API brings iframe contents closer to the experience of manipulating &lt;div&gt elements and other first-class citizens of the host DOM, with the jQuery style of simple, intuitive, chainable methods.
+
+h1. The Problem
+
+The standard browser API for working with iframes is convoluted and fragile, and the behaviour of iframes can vary wildly between browsers. This is a shame, because with a more modular web, there is an increasing need to control the sandboxing of content in the browser. Until now, it has been difficult to take advantage of this potential.
+
+Browsers are fairly reliable when loading external resources into iframes, but exhibit quirky behaviour when injecting contents directly into the elements. For example:
+
+* When an iframe element is created and populated with content, if the iframe element is moved to a different part of the DOM (e.g. if it is drag-and-dropped like an "iGoogle":http://www.google.com/ig widget, or manipulated into a new position in the page), then the iframe's contents is completely destroyed. This is seen in Firefox, Chrome, Safari and Opera - but not Internet Explorer.
+* When an iframe element is created, by default, it will have no doctype, and so it defaults to Quirks Mode in Internet Explorer.
+* The @load@ event of the iframe is inconsistently triggered in different browsers. E.g. it may be fired when the element is created and added to the DOM, or when new HTML is written to the document, or when an existing iframe is moved to another part of the DOM.
+* IE6 doesn't render iframes with an external document, if they are added to the DOM while they are hidden, and sometimes when the iframes are moved in the DOM
+* Opera doesn't support the @adoptNode@ method when applied to elements from a different iframe document
+* And so on...
+
+AppleOfMyIframe smooths over all these cross-browser differences. It provides a clean and simple API for manipulating iframe documents, bringing the experience closer to that of using jQuery's intuitive, chainable methods for manipulating basic DOM elements.
 
 
 h1. jQuery methods
