@@ -10,7 +10,7 @@
 
 h1. Quick demo
 
-Clone the repository and run @demo.html@.
+Clone the repository and run @demo/index.html@.
 "Read the wiki":http://wiki.github.com/premasagar/appleofmyiframe/ for the full API.
 
 
